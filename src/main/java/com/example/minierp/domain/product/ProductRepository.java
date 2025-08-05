@@ -9,4 +9,7 @@ public interface ProductRepository {
     Optional<Product> findById(Long id);
     List<Product> findAll();
     void deleteById(Long id);
+
+    List<Product> findByQuantityLessThanEqual(int threshold);
+
 }

@@ -5,6 +5,8 @@ import com.example.minierp.domain.product.ProductCreatedEvent;
 import com.example.minierp.domain.product.ProductRepository;
 import com.example.minierp.domain.shared.DomainEventPublisher;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +22,7 @@ public class ProductService {
 
     private final DomainEventPublisher eventPublisher;
 
+    @CacheEvict(value = "products", allEntries = true)
     @Transactional
     public Product createProduct(Product product){
         Product saved = repository.save(product);
@@ -27,6 +30,7 @@ public class ProductService {
         return saved;
     }
 
+    @Cacheable("products")
     public List<Product> getAll() {
         return repository.findAll();
     }
@@ -35,6 +39,7 @@ public class ProductService {
         return repository.findById(id);
     }
 
+    @CacheEvict(value = "products", allEntries = true)
     public void deleteById(long id){
         repository.deleteById(id);
     }

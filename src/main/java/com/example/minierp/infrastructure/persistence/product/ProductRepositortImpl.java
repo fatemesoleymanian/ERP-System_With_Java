@@ -33,4 +33,9 @@ public class ProductRepositortImpl implements ProductRepository {
     public void deleteById(Long id) {
         jpaRepo.deleteById(id);
     }
+
+    @Override
+    public List<Product> findByQuantityLessThanEqual(int threshold) {
+        return jpaRepo.findByQuantityLessThanEqual(threshold);
+    }
 }
