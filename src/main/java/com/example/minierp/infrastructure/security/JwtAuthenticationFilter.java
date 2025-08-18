@@ -1,6 +1,5 @@
 package com.example.minierp.infrastructure.security;
 
-import com.example.minierp.application.auth.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

@@ -17,7 +17,7 @@ public class InventoryController {
     private final InventoryService service;
 
     @PostMapping
-//    @PreAuthorize("hasRole('INVENTORY_MANAGER')")
+    @PreAuthorize("hasRole('INVENTORY_MANAGER') or hasRole('ADMIN')")
     public void record(@RequestBody @Valid InventoryRequest request){
         service.recordTransaction(request.productId(),request.type(),request.quantity());
     }

@@ -1,5 +1,5 @@
 package com.example.minierp.interfaces.rest.reports;
-import com.example.minierp.application.auth.JwtService;
+import com.example.minierp.infrastructure.security.JwtService;
 import com.example.minierp.domain.user.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

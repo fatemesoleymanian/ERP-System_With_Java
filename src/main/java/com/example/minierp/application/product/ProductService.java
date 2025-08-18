@@ -30,7 +30,7 @@ public class ProductService {
         return saved;
     }
 
-    @Cacheable("products")
+//    @Cacheable("products")
     public List<Product> getAll() {
         return repository.findAll();
     }

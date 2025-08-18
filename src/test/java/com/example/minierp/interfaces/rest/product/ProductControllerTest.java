@@ -1,6 +1,6 @@
 package com.example.minierp.interfaces.rest.product;
 
-import com.example.minierp.application.auth.JwtService;
+import com.example.minierp.infrastructure.security.JwtService;
 import com.example.minierp.domain.user.User;
 import com.example.minierp.domain.user.UserRepository;
 import org.junit.jupiter.api.BeforeEach;

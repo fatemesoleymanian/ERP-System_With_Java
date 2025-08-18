@@ -21,7 +21,7 @@ public class SalesController {
 
 
     @PostMapping("/order")
-//    @PreAuthorize("hasRole('SALES')")
+    @PreAuthorize("hasRole('SALES') or hasRole('ADMIN')")
     public OrderResponse placeOrder(@RequestBody CreateOrderRequest request) {
         Order order = service.placeOrder(request.items());
 

@@ -4,6 +4,7 @@ import com.example.minierp.application.product.ProductService;
 import com.example.minierp.domain.product.Product;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,6 +18,7 @@ public class ProductController {
 
     private final ProductService service;
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ProductDto create(@RequestBody @Valid CreateProductRequest request){
         Product product = ProductMapper.toEntity(request);
@@ -39,6 +41,7 @@ public class ProductController {
 
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id){
         service.deleteById(id);

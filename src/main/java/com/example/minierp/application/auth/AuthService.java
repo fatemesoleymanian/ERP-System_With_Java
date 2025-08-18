@@ -3,6 +3,7 @@ package com.example.minierp.application.auth;
 
 import com.example.minierp.domain.user.User;
 import com.example.minierp.domain.user.UserRepository;
+import com.example.minierp.infrastructure.security.JwtService;
 import com.example.minierp.interfaces.rest.auth.AuthResponse;
 import com.example.minierp.interfaces.rest.auth.LoginRequest;
 import com.example.minierp.interfaces.rest.auth.RegisterRequest;

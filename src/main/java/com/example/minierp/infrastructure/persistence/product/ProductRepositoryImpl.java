@@ -10,7 +10,7 @@ import java.util.Optional;
 
 @Repository
 @RequiredArgsConstructor
-public class ProductRepositortImpl implements ProductRepository {
+public class ProductRepositoryImpl implements ProductRepository {
 
     private final JpaProductRepository jpaRepo;
 

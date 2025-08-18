@@ -5,7 +5,4 @@ public enum Role {
     SALES,
     INVENTORY_MANAGER;
 
-    public String asAuthority() {
-        return "ROLE_" + this.name();
-    }
 }

@@ -1,4 +1,4 @@
-package com.example.minierp.application.auth;
+package com.example.minierp.infrastructure.security;
 
 import com.example.minierp.domain.user.User;
 import io.jsonwebtoken.*;

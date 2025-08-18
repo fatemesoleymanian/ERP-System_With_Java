@@ -29,8 +29,8 @@ public class ReportController {
     private final PdfReportService pdfReportService;
 
 
+    @PreAuthorize("hasRole('SALES') or hasRole('ADMIN')")
     @GetMapping("/orders")
-    @PreAuthorize("hasRole('MANAGER')")
     public List<OrderReportResponse> getOrders(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to
@@ -48,14 +48,14 @@ public class ReportController {
     }
 
     @GetMapping("/low-stock")
-//    @PreAuthorize("hasRole('INVENTORY_MANAGER')")
+    @PreAuthorize("hasRole('INVENTORY_MANAGER') or hasRole('ADMIN')")
     public List<LowStockResponse> getLowStockProducts(@RequestParam(defaultValue = "10") int threshold) {
         return productRepo.findByQuantityLessThanEqual(threshold).stream()
                 .map(p -> new LowStockResponse(p.getName(), p.getQuantity()))
                 .toList();
     }
     @GetMapping("/orders/pdf")
-//    @PreAuthorize("hasRole('MANAGER')")
+    @PreAuthorize("hasRole('SALES') or hasRole('ADMIN')")
     public ResponseEntity<byte[]> downloadOrdersAsPdf() {
         List<Order> orders = orderRepo.findAll();
         ByteArrayInputStream bis = pdfReportService.generateOrderReport(orders);
