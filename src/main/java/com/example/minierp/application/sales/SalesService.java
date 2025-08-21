@@ -6,6 +6,7 @@ import com.example.minierp.domain.sales.*;
 import com.example.minierp.domain.shared.DomainEventPublisher;
 import com.example.minierp.interfaces.rest.sales.CreateOrderRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +22,7 @@ public class SalesService {
     private final DomainEventPublisher eventPublisher;
 
     @Transactional
+    @CacheEvict(value = "products", allEntries = true)
     public Order placeOrder(List<CreateOrderRequest.Item> items) {
         List<OrderItem> orderItems = new ArrayList<>();
         Order order = Order.builder()
@@ -51,7 +53,7 @@ public class SalesService {
 
         order.setItems(orderItems);
         Order saved = repository.save(order);
-        eventPublisher.publish(new OrderPlacedEvent(saved));
+        eventPublisher.publish(new OrderPlacedEvent(saved)); /** TODO invoice needed => Billing/Accounting**/
 
         return saved;
     }

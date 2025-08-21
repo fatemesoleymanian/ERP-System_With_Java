@@ -10,7 +10,6 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,7 +29,7 @@ public class ProductService {
         return saved;
     }
 
-//    @Cacheable("products")
+    @Cacheable("products")
     public List<Product> getAll() {
         return repository.findAll();
     }

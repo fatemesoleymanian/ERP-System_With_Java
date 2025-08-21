@@ -5,20 +5,17 @@ import com.example.minierp.application.sales.SalesService;
 import com.example.minierp.domain.sales.Order;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/sales")
 @RequiredArgsConstructor
+@CrossOrigin
 public class SalesController {
 
     private final SalesService service;
-
 
     @PostMapping("/order")
     @PreAuthorize("hasRole('SALES') or hasRole('ADMIN')")

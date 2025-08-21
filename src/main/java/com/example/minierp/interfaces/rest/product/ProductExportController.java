@@ -22,7 +22,7 @@ public class ProductExportController {
     private final ProductExportService exportService;
 
     @GetMapping("/excel")
-//    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("!hasRole('SALES')")
     public ResponseEntity<InputStreamResource> exportExcel() throws IOException {
         ByteArrayInputStream excel = exportService.exportProductsToExcel();
         HttpHeaders headers = new HttpHeaders();

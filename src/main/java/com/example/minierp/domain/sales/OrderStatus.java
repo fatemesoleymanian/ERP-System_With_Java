@@ -1,5 +1,5 @@
 package com.example.minierp.domain.sales;
 
 public enum OrderStatus {
-    PLACED, CANCELLED
+    PLACED, CANCELLED, PAID, SHIPPED, Completed
 }

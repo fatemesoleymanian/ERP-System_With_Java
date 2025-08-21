@@ -30,6 +30,8 @@ public class ProductExportService {
             header.createCell(0).setCellValue("ID");
             header.createCell(1).setCellValue("Name");
             header.createCell(2).setCellValue("Price");
+            header.createCell(3).setCellValue("SKU");
+            header.createCell(4).setCellValue("QTY");
 
             int rowIdx = 1;
             for (Product product : products) {
@@ -37,6 +39,8 @@ public class ProductExportService {
                 row.createCell(0).setCellValue(product.getId());
                 row.createCell(1).setCellValue(product.getName());
                 row.createCell(2).setCellValue(product.getPrice());
+                row.createCell(3).setCellValue(product.getSku());
+                row.createCell(4).setCellValue(product.getQuantity());
             }
 
             workbook.write(out);
