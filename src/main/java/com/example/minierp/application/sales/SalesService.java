@@ -53,8 +53,116 @@ public class SalesService {
 
         order.setItems(orderItems);
         Order saved = repository.save(order);
-        eventPublisher.publish(new OrderPlacedEvent(saved)); /** TODO invoice needed => Billing/Accounting**/
+        eventPublisher.publish(new OrderPlacedEvent(saved));
 
         return saved;
+    }
+
+    @Transactional
+    public void cancelOrder(Long orderId){
+        Order order = repository.findById(orderId)
+                .orElseThrow(()-> new IllegalArgumentException("order not found"));
+
+        if (order.getStatus() == OrderStatus.CANCELLED){
+            throw new RuntimeException("Order is already cancelled");
+        }
+        for (OrderItem item: order.getItems()){
+            Product product = item.getProduct();
+
+            product.setQuantity(product.getQuantity() + item.getQuantity());
+
+            productRepository.save(product);
+        }
+        order.setStatus(OrderStatus.CANCELLED);
+        repository.save(order);
+
+        eventPublisher.publish(new OrderCancelledEvent(order));
+    }
+
+    @Transactional
+    public Order updateOrder(Long orderId, List<CreateOrderRequest.Item> newItems) {
+        Order order = repository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        if (order.getStatus() == OrderStatus.CANCELLED) {
+            throw new RuntimeException("Cancelled order cannot be updated");
+        }
+
+        for (OrderItem oldItem : order.getItems()) {
+            Product product = oldItem.getProduct();
+            product.setQuantity(product.getQuantity() + oldItem.getQuantity());
+            productRepository.save(product);
+        }
+
+        order.getItems().clear();
+
+        List<OrderItem> updatedItems = new ArrayList<>();
+
+        for (CreateOrderRequest.Item newItem : newItems) {
+            Product product = productRepository.findById(newItem.productId())
+                    .orElseThrow(() -> new RuntimeException("Product not found"));
+
+            if (product.getQuantity() < newItem.quantity()) {
+                throw new RuntimeException("موجودی کافی نیست: " + product.getName());
+            }
+
+            product.setQuantity(product.getQuantity() - newItem.quantity());
+            productRepository.save(product);
+
+            OrderItem orderItem = OrderItem.builder()
+                    .order(order)
+                    .product(product)
+                    .quantity(newItem.quantity())
+                    .price(product.getPrice())
+                    .build();
+
+            updatedItems.add(orderItem);
+        }
+
+        order.setItems(updatedItems);
+        Order saved = repository.save(order);
+
+        eventPublisher.publish(new OrderUpdatedEvent(saved, order.getItems()));
+
+        return saved;
+    }
+
+    @Transactional(readOnly = true)
+    public List<Order> getOrders() {
+        return repository.findAll();
+    }
+
+    @Transactional(readOnly = true)
+    public Order findOrder(Long orderId) {
+        return repository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+    }
+
+
+    //event driven methods
+    @Transactional
+    public void cancelOrdersContainingProduct(Long productId) {
+        List<Order> affectedOrders = repository.findByProductIdAndStatus(productId, OrderStatus.PLACED);
+
+        for (Order order : affectedOrders) {
+            order.setStatus(OrderStatus.CANCELLED);
+            repository.save(order);
+            eventPublisher.publish(new OrderCancelledEvent(order));
+        }
+    }
+
+    @Transactional
+    public void updatePendingOrdersWithNewProductInfo(Product product) {
+        List<Order> pendingOrders = repository.findByProductIdAndStatus(product.getId(), OrderStatus.PLACED);
+
+        for (Order order : pendingOrders) {
+            for (OrderItem item : order.getItems()) {
+                if (item.getProduct().getId() == product.getId()) {
+//                    item.setPrice(product.getPrice());
+                    item.setProduct(product);
+                }
+            }
+            repository.save(order);
+        }
     }
 }

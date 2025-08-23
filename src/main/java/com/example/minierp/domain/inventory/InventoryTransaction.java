@@ -26,4 +26,5 @@ public class InventoryTransaction {
     private InventoryTransactionType type; // IN / OUT
 
     private LocalDateTime timestamp;
+    private LocalDateTime deletedAt;
 }

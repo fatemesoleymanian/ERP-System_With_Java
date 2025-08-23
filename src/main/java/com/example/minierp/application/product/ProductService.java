@@ -1,8 +1,6 @@
 package com.example.minierp.application.product;
 
-import com.example.minierp.domain.product.Product;
-import com.example.minierp.domain.product.ProductCreatedEvent;
-import com.example.minierp.domain.product.ProductRepository;
+import com.example.minierp.domain.product.*;
 import com.example.minierp.domain.shared.DomainEventPublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
@@ -41,5 +39,12 @@ public class ProductService {
     @CacheEvict(value = "products", allEntries = true)
     public void deleteById(long id){
         repository.deleteById(id);
+        eventPublisher.publish(new ProductDeletedEvent(id));
+    }
+
+    @CacheEvict(value = "products", allEntries = true)
+    public void updateById(long id, Product product){
+        repository.updateById(id, product);
+        eventPublisher.publish(new ProductUpdatedEvent(id, product));
     }
 }

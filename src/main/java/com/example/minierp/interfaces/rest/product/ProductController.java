@@ -46,4 +46,11 @@ public class ProductController {
     public void delete(@PathVariable Long id){
         service.deleteById(id);
     }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/{id}")
+    public void update(@PathVariable Long id,@RequestBody @Valid CreateProductRequest request){
+        Product product = ProductMapper.toEntity(request);
+        service.updateById(id, product);
+    }
 }

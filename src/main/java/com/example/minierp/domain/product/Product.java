@@ -9,6 +9,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Data
 @NoArgsConstructor
@@ -23,4 +25,5 @@ public class Product {
     private String sku; //Stock Keeping Unit
     private double price;
     private int quantity;
+    private LocalDateTime deletedAt;
 }

@@ -52,6 +52,7 @@ public class InventoryService {
     }
 
 
+    //event driven methods
     @Transactional
     public void recordTransaction(Long productId, InventoryTransactionType type, int quantity) {
         Product product = productRepository.findById(productId)
@@ -108,6 +109,25 @@ public class InventoryService {
         }
 
         return ledger;
+    }
+
+    @Transactional
+    public void softDeleteTransactionsByProduct(Long productId) {
+        transactionRepository.softDeleteByProductId(productId);
+
+    }
+
+    @Transactional
+    public void softDeleteTransactionsById(Long id) {
+        transactionRepository.softDeleteById(id);
+    }
+
+
+    @Transactional(readOnly = true)
+    public int getCurrentQuantity(Long productId) {
+        return productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found"))
+                .getQuantity();
     }
 
 }

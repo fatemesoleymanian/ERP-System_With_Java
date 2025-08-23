@@ -28,5 +28,39 @@ public class SalesController {
 
         return new OrderResponse(order.getOrderNumber(), order.getCreatedAt(), itemDtos);
     }
+
+    @PutMapping("/cancel/{orderId}")
+    @PreAuthorize("hasRole('SALES') or hasRole('ADMIN')")
+    public void cancelOrder(@PathVariable Long orderId){
+        service.cancelOrder(orderId);
+    }
+
+    @PutMapping("/{orderId}")
+    @PreAuthorize("hasRole('SALES') or hasRole('ADMIN')")
+    public OrderResponse updateOrder(@PathVariable Long orderId, @RequestBody CreateOrderRequest request){
+        Order order = service.updateOrder(orderId,request.items());
+
+        List<OrderResponse.Item> itemDtos = order.getItems().stream()
+                .map(i -> new OrderResponse.Item(i.getProduct().getName(), i.getQuantity(), i.getPrice()))
+                .toList();
+
+        return new OrderResponse(order.getOrderNumber(), order.getCreatedAt(), itemDtos);
+    }
+
+    @GetMapping("/orders")
+    public List<Order> getAll(){
+        return service.getOrders();
+    }
+
+    @GetMapping("/orders/{id}")
+    public OrderResponse findById(@PathVariable long id){
+        Order order = service.findOrder(id);
+
+        List<OrderResponse.Item> itemDtos = order.getItems().stream()
+                .map(i -> new OrderResponse.Item(i.getProduct().getName(), i.getQuantity(), i.getPrice()))
+                .toList();
+
+        return new OrderResponse(order.getOrderNumber(), order.getCreatedAt(), itemDtos);
+    }
 }
 
