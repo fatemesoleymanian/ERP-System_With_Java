@@ -9,6 +9,8 @@ public record InventoryTransactionDto(
         LocalDateTime timestamp,
         InventoryTransactionType type,
         int quantity,
-        int balance
+        int balance,
+        Long orderId,
+        Long productId
 ) {
 }

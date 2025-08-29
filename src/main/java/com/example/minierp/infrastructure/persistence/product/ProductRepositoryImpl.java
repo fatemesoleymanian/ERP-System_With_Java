@@ -26,12 +26,12 @@ public class ProductRepositoryImpl implements ProductRepository {
 
     @Override
     public Optional<Product> findById(Long id) {
-        return jpaRepo.findById(id);
+        return jpaRepo.findByIdAndDeletedAtNull(id);
     }
 
     @Override
     public List<Product> findAll() {
-        return jpaRepo.findByDeletedAtFalse();
+        return jpaRepo.findByDeletedAtNull();
     }
     @Override
     public void deleteById(Long id) {

@@ -24,7 +24,7 @@ public class InventoryService {
 
     @Transactional
     @CacheEvict(value = "products", allEntries = true)
-    public void recordTransactionAndUpdateProduct(Long productId, InventoryTransactionType type, int quantity) {
+    public void recordTransactionAndUpdateProduct(Long productId, InventoryTransactionType type, int quantity, Long orderId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
@@ -43,6 +43,7 @@ public class InventoryService {
                 .product(product)
                 .type(type)
                 .quantity(quantity)
+                .orderId(orderId)
                 .timestamp(LocalDateTime.now())
                 .build();
 
@@ -54,7 +55,7 @@ public class InventoryService {
 
     //event driven methods
     @Transactional
-    public void recordTransaction(Long productId, InventoryTransactionType type, int quantity) {
+    public void recordTransaction(Long productId, InventoryTransactionType type, int quantity,Long orderId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
@@ -66,6 +67,7 @@ public class InventoryService {
                 .product(product)
                 .type(type)
                 .quantity(quantity)
+                .orderId(orderId)
                 .timestamp(LocalDateTime.now())
                 .build();
 
@@ -92,25 +94,28 @@ public class InventoryService {
                 runningBalance -= tx.getQuantity();
             }
 
+            Long orderId = tx.getOrderId() != null ? tx.getOrderId() : 0L;
+
             ledger.add(new InventoryTransactionDto(
                     tx.getId(),
                     tx.getTimestamp(),
                     tx.getType(),
                     tx.getQuantity(),
-                    runningBalance
+                    runningBalance,
+                    orderId,
+                    productId
             ));
         }
 
         if (runningBalance != product.getQuantity()) {
             throw new IllegalStateException("Ledger and product quantity mismatch!");
         }
-        if (product.getQuantity() < 5){
+        if (product.getQuantity() < 5) {
             eventPublisher.publish(new LowStockEvent(product));
         }
 
         return ledger;
     }
-
     @Transactional
     public void softDeleteTransactionsByProduct(Long productId) {
         transactionRepository.softDeleteByProductId(productId);
@@ -122,12 +127,16 @@ public class InventoryService {
         transactionRepository.softDeleteById(id);
     }
 
+    @Transactional
+    public void softDeleteTransactionsByOrderId(Long orderId) {
+        transactionRepository.softDeleteByOrderId(orderId);
+    }
+
 
     @Transactional(readOnly = true)
     public int getCurrentQuantity(Long productId) {
-        return productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product not found"))
-                .getQuantity();
+        Integer qty = transactionRepository.findLastQuantityByProductId(productId);
+        return qty != null ? qty : 0;
     }
 
 }

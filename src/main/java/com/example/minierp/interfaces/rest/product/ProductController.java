@@ -2,8 +2,11 @@ package com.example.minierp.interfaces.rest.product;
 
 import com.example.minierp.application.product.ProductService;
 import com.example.minierp.domain.product.Product;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,11 +37,13 @@ public class ProductController {
     }
 
     @GetMapping("/{id}")
-    public ProductDto getById(@PathVariable Long id){
-        return service.getById(id)
-                .map(ProductMapper::toDto)
-                .orElseThrow(()-> new RuntimeException("Product not found"));
-
+    public ResponseEntity<ProductDto> getById(@PathVariable Long id) {
+        try {
+            Product product = service.getById(id);
+            return ResponseEntity.ok(ProductMapper.toDto(product));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
     }
 
     @PreAuthorize("hasRole('ADMIN')")

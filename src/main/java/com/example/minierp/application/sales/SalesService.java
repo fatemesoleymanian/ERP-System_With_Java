@@ -19,6 +19,7 @@ import java.util.UUID;
 public class SalesService {
     private final ProductRepository productRepository;
     private final OrderRepository repository;
+    private final OrderItemRepository orderItemRepository;
     private final DomainEventPublisher eventPublisher;
 
     @Transactional
@@ -88,12 +89,15 @@ public class SalesService {
             throw new RuntimeException("Cancelled order cannot be updated");
         }
 
+        List<OrderItem> oldItems = new ArrayList<>(order.getItems());
+
         for (OrderItem oldItem : order.getItems()) {
             Product product = oldItem.getProduct();
             product.setQuantity(product.getQuantity() + oldItem.getQuantity());
             productRepository.save(product);
         }
 
+        orderItemRepository.deleteAll(order.getItems());
         order.getItems().clear();
 
         List<OrderItem> updatedItems = new ArrayList<>();
@@ -122,7 +126,7 @@ public class SalesService {
         order.setItems(updatedItems);
         Order saved = repository.save(order);
 
-        eventPublisher.publish(new OrderUpdatedEvent(saved, order.getItems()));
+        eventPublisher.publish(new OrderUpdatedEvent(orderId, saved, oldItems));
 
         return saved;
     }

@@ -2,6 +2,7 @@ package com.example.minierp.application.product;
 
 import com.example.minierp.domain.product.*;
 import com.example.minierp.domain.shared.DomainEventPublisher;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -27,13 +28,14 @@ public class ProductService {
         return saved;
     }
 
-    @Cacheable("products")
+//    @Cacheable("products")
     public List<Product> getAll() {
         return repository.findAll();
     }
 
-    public Optional<Product> getById(long id){
-        return repository.findById(id);
+    public Product getById(long id){
+        return repository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Product with ID " + id + " not found"));
     }
 
     @CacheEvict(value = "products", allEntries = true)

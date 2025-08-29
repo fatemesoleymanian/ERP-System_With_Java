@@ -25,7 +25,8 @@ public class InventoryEventHandler {
             service.recordTransaction(
                     item.getProduct().getId(),
                     InventoryTransactionType.OUT,
-                    item.getQuantity()
+                    item.getQuantity(),
+                    event.order().getId()
             );
         }
     }
@@ -36,23 +37,23 @@ public class InventoryEventHandler {
             service.recordTransaction(
                     item.getProduct().getId(),
                     InventoryTransactionType.IN,
-                    item.getQuantity()
+                    item.getQuantity(),
+                    event.order().getId()
             );
         }
     }
     @EventListener
     public void handleOrderUpdated(OrderUpdatedEvent event){
         //delete the old items
-        for (OrderItem item : event.oldOrderItems()){
-            service.softDeleteTransactionsById(item.getId());
-        }
+            service.softDeleteTransactionsByOrderId(event.orderId());
 
         //handleOrderPlaced
         for (OrderItem item : event.newOrder().getItems()) {
             service.recordTransaction(
                     item.getProduct().getId(),
                     InventoryTransactionType.OUT,
-                    item.getQuantity()
+                    item.getQuantity(),
+                    event.orderId()
             );
         }
 
@@ -62,22 +63,25 @@ public class InventoryEventHandler {
             service.recordTransaction(
                    event.product().getId(),
                     InventoryTransactionType.IN,
-                    event.product().getQuantity()
+                    event.product().getQuantity(),
+                    null
             );
     }
 
     @EventListener
     public void handleProductUpdated(ProductUpdatedEvent event){
+
         Product updated = event.product();
 
-        int currentStock = service.getCurrentQuantity(updated.getId());
+        int currentStock = service.getCurrentQuantity(event.id());
+
         int diff = updated.getQuantity() - currentStock;
 
         if (diff != 0) {
             InventoryTransactionType type =
                     diff > 0 ? InventoryTransactionType.IN : InventoryTransactionType.OUT;
 
-            service.recordTransaction(updated.getId(), type, Math.abs(diff));
+            service.recordTransaction(event.id(), type, Math.abs(diff),null);
         }
     }
 

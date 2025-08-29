@@ -1,6 +1,7 @@
 package com.example.minierp.domain.sales;
 
 import com.example.minierp.domain.product.Product;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,6 +14,7 @@ public class OrderItem {
     @GeneratedValue
     private long id;
 
+    @JsonBackReference
     @ManyToOne @JoinColumn(name = "order_id")
     private Order order;
 

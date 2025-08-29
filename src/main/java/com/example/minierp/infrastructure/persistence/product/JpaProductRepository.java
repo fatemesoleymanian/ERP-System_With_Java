@@ -2,11 +2,18 @@ package com.example.minierp.infrastructure.persistence.product;
 
 import com.example.minierp.domain.product.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface JpaProductRepository extends JpaRepository<Product, Long> {
     List<Product> findByQuantityLessThanEqualAndDeletedAtFalse(int threshold);
 
-    List<Product> findByDeletedAtFalse();
+    @Query("select p from Product p where p.deletedAt is NULL")
+    List<Product> findByDeletedAtNull();
+
+    @Query("select p from Product p where p.id = :id AND p.deletedAt is NULL")
+    Optional<Product> findByIdAndDeletedAtNull(long id);
 }

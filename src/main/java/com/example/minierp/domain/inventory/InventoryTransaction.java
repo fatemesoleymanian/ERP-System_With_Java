@@ -27,4 +27,5 @@ public class InventoryTransaction {
 
     private LocalDateTime timestamp;
     private LocalDateTime deletedAt;
+    private Long orderId;
 }
