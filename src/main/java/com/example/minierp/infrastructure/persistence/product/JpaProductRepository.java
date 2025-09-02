@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface JpaProductRepository extends JpaRepository<Product, Long> {
-    List<Product> findByQuantityLessThanEqualAndDeletedAtFalse(int threshold);
+    List<Product> findByQuantityLessThanEqualAndDeletedAtNull(int threshold);
 
     @Query("select p from Product p where p.deletedAt is NULL")
     List<Product> findByDeletedAtNull();

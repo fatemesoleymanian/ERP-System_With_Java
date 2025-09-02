@@ -64,6 +64,6 @@ public class ProductRepositoryImpl implements ProductRepository {
 
     @Override
     public List<Product> findByQuantityLessThanEqual(int threshold) {
-        return jpaRepo.findByQuantityLessThanEqualAndDeletedAtFalse(threshold);
+        return jpaRepo.findByQuantityLessThanEqualAndDeletedAtNull(threshold);
     }
 }

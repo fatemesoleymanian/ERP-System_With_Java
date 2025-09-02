@@ -53,5 +53,27 @@ public class PdfReportService {
 
         return new ByteArrayInputStream(out.toByteArray());
     }
+    public ByteArrayInputStream generateEmptyOrderReport(String message) {
+        Document document = new Document();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        try {
+            PdfWriter.getInstance(document, out);
+            document.open();
+
+            document.addTitle("Order Report");
+            Font bodyFont = new Font(Font.HELVETICA, 12);
+
+            Paragraph messageParagraph = new Paragraph(message, bodyFont);
+            messageParagraph.setAlignment(Paragraph.ALIGN_CENTER);
+            document.add(messageParagraph);
+
+            document.close();
+        } catch (Exception e) {
+            throw new RuntimeException("Error generating empty PDF report", e);
+        }
+
+        return new ByteArrayInputStream(out.toByteArray());
+    }
 }
 
