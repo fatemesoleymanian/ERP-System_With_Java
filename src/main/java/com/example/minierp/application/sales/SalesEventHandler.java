@@ -1,6 +1,5 @@
 package com.example.minierp.application.sales;
 
-import com.example.minierp.domain.inventory.InventoryEvent;
 import com.example.minierp.domain.product.Product;
 import com.example.minierp.domain.product.ProductDeletedEvent;
 import com.example.minierp.domain.product.ProductUpdatedEvent;

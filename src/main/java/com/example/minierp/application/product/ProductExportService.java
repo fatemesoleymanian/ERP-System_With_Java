@@ -3,6 +3,7 @@ package com.example.minierp.application.product;
 import com.example.minierp.domain.product.Product;
 import com.example.minierp.domain.product.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import org.apache.poi.ss.usermodel.RichTextString;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -38,7 +39,7 @@ public class ProductExportService {
                 Row row = sheet.createRow(rowIdx++);
                 row.createCell(0).setCellValue(product.getId());
                 row.createCell(1).setCellValue(product.getName());
-                row.createCell(2).setCellValue(product.getPrice());
+                row.createCell(2).setCellValue((RichTextString) product.getPrice());
                 row.createCell(3).setCellValue(product.getSku());
                 row.createCell(4).setCellValue(product.getQuantity());
             }

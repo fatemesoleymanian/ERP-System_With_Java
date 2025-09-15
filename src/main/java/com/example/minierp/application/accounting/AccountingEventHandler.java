@@ -17,6 +17,10 @@ public class AccountingEventHandler {
     public void handleOrderPlaced(OrderPlacedEvent event){
         /**TODO **/
     }
+    @EventListener
+    public void OrderConfirmedEvent(OrderConfirmedEvent event){
+        /**TODO **/
+    }
 
     @EventListener
     public void handleOrderCancelled(OrderCancelledEvent event){

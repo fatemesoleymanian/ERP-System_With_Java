@@ -1,4 +1,4 @@
-package com.example.minierp.domain.product;
+package com.example.minierp.domain.customer;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -6,24 +6,23 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-
 @Entity
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Product {
+public class Customer {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String name;
-    private String sku; //Stock Keeping Unit
-    private BigDecimal price;
-    private int quantity;
-    private LocalDateTime deletedAt;
-    @Version
-    private Long version;
+
+    private String contactPerson;
+    private String phone;
+    private String email;
+    private String billingAddress;
+    private String shippingAddress;
 }
+
