@@ -1,9 +1,0 @@
-production ready requirements :
-- logging
-- Idempotency برای Eventها => done
-
-آ[ر سر یه
-- test
-- README
-- Dockerize
-- Seed Data / Demo Mode
