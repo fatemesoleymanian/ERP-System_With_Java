@@ -101,7 +101,7 @@ public class SaleOrderController {
     }
 
     /** ✅ Get paginated / filtered orders */
-    @GetMapping
+    @GetMapping /** TODO Bugiiii **/
     @PreAuthorize("hasRole('ADMIN') or hasRole('SALES') or hasRole('VIEWER')")
     public Page<OrderResponseDto> getOrdersFiltered(
             @RequestParam(required = false) OrderStatus status,
@@ -109,9 +109,16 @@ public class SaleOrderController {
             @RequestParam(required = false) LocalDateTime to,
             Pageable pageable
     ) {
-        return service.getOrdersFiltered(status, from, to, pageable)
+        // جلوگیری از Sort اشتباه
+        Pageable safePageable = pageable;
+        if (pageable.getSort().isUnsorted() || pageable.getSort().toString().contains("[")) {
+            safePageable = Pageable.ofSize(pageable.getPageSize()).withPage(pageable.getPageNumber());
+        }
+
+        return service.getOrdersFiltered(status, from, to, safePageable)
                 .map(OrderResponseDto::fromEntity);
     }
+
 
     /** ✅ Get all orders (no pagination) */
     @GetMapping("/all")

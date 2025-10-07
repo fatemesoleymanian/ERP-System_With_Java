@@ -1,5 +1,6 @@
 package com.example.minierp.application.product;
 
+import com.example.minierp.domain.common.exceptions.DynamicTextException;
 import com.example.minierp.domain.product.*;
 import com.example.minierp.domain.common.exceptions.NotFoundException;
 import com.example.minierp.domain.shared.DomainEventPublisher;
@@ -21,6 +22,10 @@ public class ProductService {
 
     @Transactional
     public ProductResponse create(CreateProductRequest request) {
+
+        if (repository.existsBySku(request.sku())){
+            throw new DynamicTextException("محصول تکراری است.");
+        }
         Product product = Product.builder()
                 .name(request.name())
                 .sku(request.sku())
@@ -89,7 +94,7 @@ public class ProductService {
                 product.getId(),
                 product.getName(),
                 product.getSku(),
-                product.getCategory().toString(),
+                product.getCategory().getName(),
                 product.getPrice(),
                 product.getQuantity(),
                 product.getDiscountValue(),

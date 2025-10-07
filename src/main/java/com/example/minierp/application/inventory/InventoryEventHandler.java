@@ -111,7 +111,7 @@ public class InventoryEventHandler {
     public void handleProductCreated(ProductCreatedEvent event) {
         log.info("Processing ProductCreatedEvent for product {}", event.product().getId());
 
-        service.recordTransactionAndUpdateProduct(
+        service.recordTransaction(
                 event.product().getId(),
                 InventoryTransactionType.IN,
                 event.product().getQuantity(),
@@ -132,7 +132,7 @@ public class InventoryEventHandler {
             InventoryTransactionType type =
                     diff > 0 ? InventoryTransactionType.IN : InventoryTransactionType.OUT;
 
-            service.recordTransactionAndUpdateProduct(
+            service.recordTransaction(
                     event.id(),
                     type,
                     Math.abs(diff),

@@ -1,7 +1,9 @@
 package com.example.minierp.interfaces.rest.auth;
 
 import com.example.minierp.domain.user.Role;
+import com.example.minierp.infrastructure.validation.ValidEnum;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public record RegisterRequest(
@@ -14,6 +16,7 @@ public record RegisterRequest(
         @Size(min = 5, message = "رمزعبور نمی‌تواند کمتر از 5 کاراکتر باشد")
         String password,
 
-        @NotBlank(message = "رمزعبور الزامی است")
-        Role role
+        @NotNull(message = "نقش الزامی است")
+        @ValidEnum(enumClass = Role.class, message = "نقش واردشده معتبر نیست")
+        String role
 ) { }

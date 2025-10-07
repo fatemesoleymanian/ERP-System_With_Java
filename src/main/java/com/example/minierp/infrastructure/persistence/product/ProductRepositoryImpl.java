@@ -72,4 +72,11 @@ public class ProductRepositoryImpl implements ProductRepository {
     public List<Product> findByQuantityLessThanEqual(int threshold) {
         return jpaRepo.findByQuantityLessThanEqualAndDeletedAtNull(threshold);
     }
+
+    @Override
+    public boolean existsBySku(String sku) {
+        return jpaRepo.existsBySku(sku);
+    }
+
+
 }

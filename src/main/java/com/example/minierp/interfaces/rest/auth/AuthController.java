@@ -1,7 +1,10 @@
 package com.example.minierp.interfaces.rest.auth;
 
+import com.example.minierp.api.common.ApiResponse;
 import com.example.minierp.application.auth.AuthService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,34 +16,37 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest request){
-        return ResponseEntity.ok(authService.register(request));
+    public ResponseEntity<ApiResponse<AuthResponse>> register(@Valid @RequestBody RegisterRequest request){
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(authService.register(request)));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request){
-        return ResponseEntity.ok(authService.login(request));
+    public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request){
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success(authService.login(request)));
     }
 
     @PostMapping("/refresh-token")
-    public ResponseEntity<AuthResponse> refreshToken(@RequestParam String token){
-        return ResponseEntity.ok(authService.refreshToken(token));
+    public ResponseEntity<ApiResponse<AuthResponse>> refreshToken(@RequestParam String token){
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success(authService.refreshToken(token)));
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@RequestParam String token){
+    public ResponseEntity<ApiResponse<Void>> logout(@RequestParam String token){
         authService.logout(token);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<Void> forgotPassword(@RequestParam String username){
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(@RequestParam String username){
         authService.forgotPassword(username);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<Void> resetPassword(@RequestParam String token, @RequestParam String newPassword){
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@RequestParam String token, @RequestParam String newPassword){
         authService.resetPassword(token, newPassword);
         return ResponseEntity.ok().build();
     }

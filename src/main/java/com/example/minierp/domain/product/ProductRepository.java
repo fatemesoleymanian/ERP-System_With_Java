@@ -19,6 +19,8 @@ public interface ProductRepository {
 
     List<Product> findByQuantityLessThanEqual(int threshold);
 
+    boolean existsBySku(String sku);
+
 
 
 }

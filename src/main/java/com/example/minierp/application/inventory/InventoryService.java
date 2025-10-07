@@ -2,8 +2,10 @@ package com.example.minierp.application.inventory;
 
 import com.example.minierp.domain.common.exceptions.InsufficientStockException;
 import com.example.minierp.domain.common.exceptions.NotFoundException;
+import com.example.minierp.domain.inventory.InventoryEvent;
 import com.example.minierp.domain.inventory.InventoryTransaction;
 import com.example.minierp.domain.inventory.InventoryTransactionType;
+import com.example.minierp.domain.inventory.LowStockEvent;
 import com.example.minierp.domain.product.Product;
 import com.example.minierp.domain.product.ProductRepository;
 import com.example.minierp.domain.shared.DomainEventPublisher;
@@ -60,6 +62,39 @@ public class InventoryService {
         // publish low stock event if needed
         if (product.getQuantity() < 5) {
             eventPublisher.publish(new com.example.minierp.domain.inventory.LowStockEvent(product));
+        }
+    }
+
+    @Transactional
+    @CacheEvict(value = "products", allEntries = true)
+    public void recordTransaction(Long productId, InventoryTransactionType type, int quantity, Long orderId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new NotFoundException(productId,"Product "));
+
+        if (type == InventoryTransactionType.OUT && product.getQuantity() < quantity) {
+            throw new InsufficientStockException(product.getName(),quantity);
+        }
+
+        int updatedQty = type == InventoryTransactionType.IN
+                ? product.getQuantity() + quantity
+                : product.getQuantity() - quantity;
+
+
+        InventoryTransaction tx = InventoryTransaction.builder()
+                .product(product)
+                .type(type)
+                .quantity(quantity)
+                .orderId(orderId)
+                .build();
+
+        transactionRepository.save(tx);
+
+        // publish event for other modules
+        eventPublisher.publish(new InventoryEvent(product, quantity, type));
+
+        // publish low stock event if needed
+        if (product.getQuantity() < 5) {
+            eventPublisher.publish(new LowStockEvent(product));
         }
     }
 

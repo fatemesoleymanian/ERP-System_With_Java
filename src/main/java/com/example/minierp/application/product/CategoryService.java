@@ -1,6 +1,7 @@
 package com.example.minierp.application.product;
 
 
+import com.example.minierp.domain.common.exceptions.DynamicTextException;
 import com.example.minierp.domain.product.Category;
 import com.example.minierp.domain.product.CategoryRepository;
 import com.example.minierp.interfaces.rest.product.CategoryResponse;
@@ -19,6 +20,10 @@ public class CategoryService {
     private final CategoryRepository categoryRepository;
 
     public CategoryResponse create(CreateCategoryRequest request) {
+
+        if (categoryRepository.existsByName(request.name())){
+            throw new DynamicTextException("دسته بندی تکراری است.");
+        }
         Category category = Category.builder()
                 .name(request.name())
                 .build();

@@ -4,6 +4,7 @@ package com.example.minierp.application.auth;
 import com.example.minierp.domain.common.exceptions.BusinessException;
 import com.example.minierp.domain.common.exceptions.DynamicTextException;
 import com.example.minierp.domain.common.exceptions.NotFoundException;
+import com.example.minierp.domain.user.Role;
 import com.example.minierp.domain.user.User;
 import com.example.minierp.domain.user.UserRepository;
 import com.example.minierp.infrastructure.security.JwtService;
@@ -23,10 +24,15 @@ public class AuthService { //bcryption and generating token
     private final JwtService jwtService;
 
     public AuthResponse register(RegisterRequest request){
+
+        if (repository.existsByUsername(request.username())) {
+            throw new DynamicTextException("نام کاربری تکراری است.");
+        }
+
         User user = User.builder()
                 .username(request.username())
                 .password(encoder.encode(request.password()))
-                .role(request.role())
+                .role(Role.valueOf(request.role().toUpperCase()))
                 .build();
         repository.save(user);
 

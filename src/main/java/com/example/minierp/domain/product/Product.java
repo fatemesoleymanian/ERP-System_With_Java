@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Table(name = "products")
 public class Product extends AuditableEntity {
 
     @Id

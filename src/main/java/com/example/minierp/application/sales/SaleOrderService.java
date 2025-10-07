@@ -83,6 +83,7 @@ public class SaleOrderService {
         SaleOrder saved = orderRepository.save(order);
         eventPublisher.publish(new OrderPlacedEvent(UUID.randomUUID().toString(), saved));
 
+        /** TODO inventory has a problem after order placed **/
         log.info("✅ Order {} placed successfully", saved.getOrderNumber());
         return saved;
     }
@@ -168,6 +169,8 @@ public class SaleOrderService {
         order.setCancelReason(reason);
 
         SaleOrder saved = orderRepository.save(order);
+
+        // You can log it and save it in db for tracking order
         eventPublisher.publish(new OrderCancelledEvent(UUID.randomUUID().toString(), saved, reason));
 
         log.info("🚫 Order {} cancelled", orderId);
