@@ -33,6 +33,12 @@ public class ProductRepositoryImpl implements ProductRepository {
     public List<Product> findAll() {
         return jpaRepo.findByDeletedAtNull();
     }
+
+    @Override
+    public List<Product> findByCategoryId(Long categoryId) {
+        return jpaRepo.findByCategoryId(categoryId);
+    }
+
     @Override
     public void deleteById(Long id) {
         Optional<Product> existingProductOpt = jpaRepo.findById(id);

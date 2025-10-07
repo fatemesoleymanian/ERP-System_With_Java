@@ -1,3 +1,10 @@
 package com.example.minierp.interfaces.rest.auth;
 
-public record AuthResponse (String token){ }
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "پاسخ احراز هویت")
+
+public record AuthResponse (
+        @Schema(description = "توکن کاربر")
+        String token
+){ }

@@ -1,7 +1,8 @@
 package com.example.minierp.interfaces.rest.inventory;
 
 import com.example.minierp.application.inventory.InventoryService;
-import io.jsonwebtoken.lang.Collections;
+import com.example.minierp.domain.inventory.InventoryTransactionType;
+import com.example.minierp.api.common.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -14,28 +15,39 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/inventory")
 @RequiredArgsConstructor
+@CrossOrigin
 public class InventoryController {
 
     private final InventoryService service;
 
-    @PostMapping
+    /**
+     * Record an inventory transaction manually
+     */
+    @PostMapping("/transaction")
     @PreAuthorize("hasRole('INVENTORY_MANAGER') or hasRole('ADMIN')")
-    public void record(@RequestBody @Valid InventoryRequest request){
-        service.recordTransactionAndUpdateProduct(request.productId(),request.type(),request.quantity(),request.orderId());
+    public ResponseEntity<ApiResponse<Void>> recordTransaction(
+            @RequestBody @Valid CreateInventoryTransactionRequest request) {
+
+        service.recordTransactionAndUpdateProduct(
+                request.productId(),
+                request.type(),
+                request.quantity(),
+                request.orderId()
+        );
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(null));
     }
 
-    @GetMapping("/{productId}")
+    /**
+     * Get inventory ledger for a product
+     */
+    @GetMapping("/ledger/{productId}")
     @PreAuthorize("hasRole('INVENTORY_MANAGER') or hasRole('ADMIN')")
-    public ResponseEntity<List<InventoryTransactionDto>> findLedger(@PathVariable Long productId) {
-        try {
-            List<InventoryTransactionDto> ledger = service.getProductLedger(productId);
-            return ResponseEntity.ok(ledger);
-        } catch (RuntimeException e) {
-            if (e.getMessage().equals("Product not found")) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(Collections.emptyList());
-            }
-            throw e;
-        }
+    public ResponseEntity<ApiResponse<List<InventoryTransactionDto>>> getProductLedger(
+            @PathVariable Long productId) {
+
+        List<InventoryTransactionDto> ledger = service.getProductLedger(productId);
+        return ResponseEntity.ok(ApiResponse.success(ledger));
     }
 }

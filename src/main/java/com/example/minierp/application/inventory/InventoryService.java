@@ -1,6 +1,9 @@
 package com.example.minierp.application.inventory;
 
-import com.example.minierp.domain.inventory.*;
+import com.example.minierp.domain.common.exceptions.InsufficientStockException;
+import com.example.minierp.domain.common.exceptions.NotFoundException;
+import com.example.minierp.domain.inventory.InventoryTransaction;
+import com.example.minierp.domain.inventory.InventoryTransactionType;
 import com.example.minierp.domain.product.Product;
 import com.example.minierp.domain.product.ProductRepository;
 import com.example.minierp.domain.shared.DomainEventPublisher;
@@ -19,17 +22,20 @@ import java.util.List;
 public class InventoryService {
 
     private final ProductRepository productRepository;
-    private final InventoryTransactionRepository transactionRepository;
+    private final com.example.minierp.domain.inventory.InventoryTransactionRepository transactionRepository;
     private final DomainEventPublisher eventPublisher;
 
+    /**
+     * Record a transaction and update the product quantity
+     */
     @Transactional
     @CacheEvict(value = "products", allEntries = true)
     public void recordTransactionAndUpdateProduct(Long productId, InventoryTransactionType type, int quantity, Long orderId) {
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new NotFoundException(productId,"Product "));
 
         if (type == InventoryTransactionType.OUT && product.getQuantity() < quantity) {
-            throw new RuntimeException("Insufficient inventory");
+            throw new InsufficientStockException(product.getName(),quantity);
         }
 
         int updatedQty = type == InventoryTransactionType.IN
@@ -44,61 +50,43 @@ public class InventoryService {
                 .type(type)
                 .quantity(quantity)
                 .orderId(orderId)
-                .timestamp(LocalDateTime.now())
                 .build();
 
         transactionRepository.save(tx);
 
-        eventPublisher.publish(new InventoryEvent(product, quantity, type));
-    }
+        // publish event for other modules
+        eventPublisher.publish(new com.example.minierp.domain.inventory.InventoryEvent(product, quantity, type));
 
-
-    //event driven methods
-    @Transactional
-    public void recordTransaction(Long productId, InventoryTransactionType type, int quantity,Long orderId) {
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
-
-        if (type == InventoryTransactionType.OUT && product.getQuantity() < quantity) {
-            throw new RuntimeException("Insufficient inventory");
+        // publish low stock event if needed
+        if (product.getQuantity() < 5) {
+            eventPublisher.publish(new com.example.minierp.domain.inventory.LowStockEvent(product));
         }
-
-        InventoryTransaction tx = InventoryTransaction.builder()
-                .product(product)
-                .type(type)
-                .quantity(quantity)
-                .orderId(orderId)
-                .timestamp(LocalDateTime.now())
-                .build();
-
-        transactionRepository.save(tx);
-
-        eventPublisher.publish(new InventoryEvent(product, quantity, type));
     }
 
+    /**
+     * Retrieve product ledger with running balance
+     */
     @Transactional(readOnly = true)
     public List<InventoryTransactionDto> getProductLedger(Long productId) {
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new NotFoundException(productId,"Product"));
 
         List<InventoryTransaction> transactions =
-                transactionRepository.findByProductIdOrderByTimestampAsc(productId);
+                transactionRepository.findByProductIdOrderByCreatedAtAsc(productId);
 
         int runningBalance = 0;
         List<InventoryTransactionDto> ledger = new ArrayList<>();
 
         for (InventoryTransaction tx : transactions) {
-            if (tx.getType() == InventoryTransactionType.IN) {
-                runningBalance += tx.getQuantity();
-            } else {
-                runningBalance -= tx.getQuantity();
-            }
+            runningBalance = tx.getType() == InventoryTransactionType.IN
+                    ? runningBalance + tx.getQuantity()
+                    : runningBalance - tx.getQuantity();
 
             Long orderId = tx.getOrderId() != null ? tx.getOrderId() : 0L;
 
             ledger.add(new InventoryTransactionDto(
                     tx.getId(),
-                    tx.getTimestamp(),
+                    tx.getCreatedAt(),
                     tx.getType(),
                     tx.getQuantity(),
                     runningBalance,
@@ -110,33 +98,40 @@ public class InventoryService {
         if (runningBalance != product.getQuantity()) {
             throw new IllegalStateException("Ledger and product quantity mismatch!");
         }
-        if (product.getQuantity() < 5) {
-            eventPublisher.publish(new LowStockEvent(product));
-        }
 
         return ledger;
     }
+
+    /**
+     * Soft delete transactions by product ID
+     */
     @Transactional
     public void softDeleteTransactionsByProduct(Long productId) {
         transactionRepository.softDeleteByProductId(productId);
-
     }
 
+    /**
+     * Soft delete a single transaction by ID
+     */
     @Transactional
     public void softDeleteTransactionsById(Long id) {
         transactionRepository.softDeleteById(id);
     }
 
+    /**
+     * Soft delete transactions by order ID
+     */
     @Transactional
     public void softDeleteTransactionsByOrderId(Long orderId) {
         transactionRepository.softDeleteByOrderId(orderId);
     }
 
-
+    /**
+     * Get current quantity of a product
+     */
     @Transactional(readOnly = true)
     public int getCurrentQuantity(Long productId) {
         Integer qty = transactionRepository.findLastQuantityByProductId(productId);
         return qty != null ? qty : 0;
     }
-
 }

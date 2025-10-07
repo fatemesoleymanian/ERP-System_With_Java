@@ -9,11 +9,16 @@ public interface ProductRepository {
     Optional<Product> findById(Long id);
     List<Product> findAll();
 
+    List<Product> findByCategoryId(Long categoryId);
+
+
     //soft
     void deleteById(Long id);
 
     void updateById(Long id,Product product);
 
     List<Product> findByQuantityLessThanEqual(int threshold);
+
+
 
 }

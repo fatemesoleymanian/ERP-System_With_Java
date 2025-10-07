@@ -1,5 +1,5 @@
 package com.example.minierp.domain.sales;
 
 
-public record OrderShippedEvent(String id, Order order, String trackingCode) {
-}
+public record OrderShippedEvent(String id, SaleOrder order, String trackingCode) { }
+

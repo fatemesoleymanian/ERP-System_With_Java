@@ -99,8 +99,14 @@ Product listing and detail APIs are cached using Spring's annotation-based cachi
 ---
 
 ## 🪪 License
+This project is licensed under a custom license.  
+It is shared for **demonstration and educational purposes only**.  
+Commercial use or distribution without permission is prohibited.
 
-This project is licensed under the MIT License.
+مجوز:
+این پروژه صرفاً برای نمایش و اهداف آموزشی منتشر شده است.
+استفاده تجاری یا انتشار بدون اجازه نویسنده ممنوع است.
+
 ---
 
 > ⭐ If you like this project or find it useful, give it a star on GitHub!

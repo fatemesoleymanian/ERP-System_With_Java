@@ -1,5 +1,6 @@
 package com.example.minierp.domain.inventory;
 
+import com.example.minierp.domain.common.AuditableEntity;
 import com.example.minierp.domain.product.Product;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -14,18 +15,19 @@ import java.time.LocalDateTime;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class InventoryTransaction {
+public class InventoryTransaction extends AuditableEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     private Product product;
-    private int quantity;
-    @Enumerated(EnumType.STRING)
-    private InventoryTransactionType type; // IN / OUT
 
-    private LocalDateTime timestamp;
-    private LocalDateTime deletedAt;
-    private Long orderId;
+    private int quantity;
+
+    @Enumerated(EnumType.STRING)
+    private InventoryTransactionType type; // IN or OUT
+
+    private Long orderId; // optional, links to order if OUT
 }

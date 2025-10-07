@@ -17,6 +17,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
+/**
+ * Handles all inventory-related domain events to keep stock synchronized
+ * with sales and product lifecycle changes.
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -25,95 +29,122 @@ public class InventoryEventHandler {
     private final InventoryService service;
     private final ProcessedEventRepository processedEventRepository;
 
-
+    /**
+     * Check if an event has already been processed to ensure idempotency.
+     */
     private boolean isAlreadyProcessed(String eventId) {
         return processedEventRepository.existsById(eventId);
-    } @Transactional(propagation = Propagation.REQUIRES_NEW)
+    }
+
+    /**
+     * Mark an event as processed in a separate transaction.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     void markAsProcessed(String eventId) {
         processedEventRepository.save(new ProcessedEvent(eventId, LocalDateTime.now()));
     }
+
+    // ------------------ ORDER EVENTS ------------------
+
     @EventListener
     @Transactional
-    public void handleOrderConfirmed(OrderConfirmedEvent event){
-        log.info(event.id());
+    public void handleOrderConfirmed(OrderConfirmedEvent event) {
+        log.info("Processing OrderConfirmedEvent: {}", event.id());
         if (isAlreadyProcessed(event.id())) return;
-        for (OrderItem item : event.order().getItems()) {
-            service.recordTransaction(
-                    item.getProduct().getId(),
-                    InventoryTransactionType.OUT,
-                    item.getQuantity(),
-                    event.order().getId() );
-        }
+
+        event.order().getItems().forEach(item ->
+                service.recordTransactionAndUpdateProduct(
+                        item.getProduct().getId(),
+                        InventoryTransactionType.OUT,
+                        item.getQuantity(),
+                        event.order().getId()
+                )
+        );
+
         markAsProcessed(event.id());
     }
 
     @EventListener
     @Transactional
-    public void handleOrderCancelled(OrderCancelledEvent event){
+    public void handleOrderCancelled(OrderCancelledEvent event) {
+        log.info("Processing OrderCancelledEvent: {}", event.id());
         if (isAlreadyProcessed(event.id())) return;
 
-        for (OrderItem item : event.order().getItems()) {
-            service.recordTransaction(
-                    item.getProduct().getId(),
-                    InventoryTransactionType.IN,
-                    item.getQuantity(),
-                    event.order().getId()
-            );
-        }
+        event.order().getItems().forEach(item ->
+                service.recordTransactionAndUpdateProduct(
+                        item.getProduct().getId(),
+                        InventoryTransactionType.IN,
+                        item.getQuantity(),
+                        event.order().getId()
+                )
+        );
 
         markAsProcessed(event.id());
     }
+
     @EventListener
     @Transactional
-    public void handleOrderUpdated(OrderUpdatedEvent event){
+    public void handleOrderUpdated(OrderUpdatedEvent event) {
+        log.info("Processing OrderUpdatedEvent: {}", event.id());
         if (isAlreadyProcessed(event.id())) return;
 
-        //delete the old items
-            service.softDeleteTransactionsByOrderId(event.orderId());
+        // Delete old transactions for the order
+        service.softDeleteTransactionsByOrderId(event.orderId());
 
-        //handleOrderPlaced
-        for (OrderItem item : event.newOrder().getItems()) {
-            service.recordTransaction(
-                    item.getProduct().getId(),
-                    InventoryTransactionType.OUT,
-                    item.getQuantity(),
-                    event.orderId()
-            );
-        }
+        // Record new updated transactions
+        event.newOrder().getItems().forEach(item ->
+                service.recordTransactionAndUpdateProduct(
+                        item.getProduct().getId(),
+                        InventoryTransactionType.OUT,
+                        item.getQuantity(),
+                        event.orderId()
+                )
+        );
 
         markAsProcessed(event.id());
     }
+
+    // ------------------ PRODUCT EVENTS ------------------
+
     @EventListener
-    public void handleProductCreate(ProductCreatedEvent event){
-            service.recordTransaction(
-                   event.product().getId(),
-                    InventoryTransactionType.IN,
-                    event.product().getQuantity(),
-                    null
-            );
+    @Transactional
+    public void handleProductCreated(ProductCreatedEvent event) {
+        log.info("Processing ProductCreatedEvent for product {}", event.product().getId());
+
+        service.recordTransactionAndUpdateProduct(
+                event.product().getId(),
+                InventoryTransactionType.IN,
+                event.product().getQuantity(),
+                null
+        );
     }
 
     @EventListener
-    public void handleProductUpdated(ProductUpdatedEvent event){
+    @Transactional
+    public void handleProductUpdated(ProductUpdatedEvent event) {
+        log.info("Processing ProductUpdatedEvent for product {}", event.id());
 
         Product updated = event.product();
-
         int currentStock = service.getCurrentQuantity(event.id());
-
         int diff = updated.getQuantity() - currentStock;
 
         if (diff != 0) {
             InventoryTransactionType type =
                     diff > 0 ? InventoryTransactionType.IN : InventoryTransactionType.OUT;
 
-            service.recordTransaction(event.id(), type, Math.abs(diff),null);
+            service.recordTransactionAndUpdateProduct(
+                    event.id(),
+                    type,
+                    Math.abs(diff),
+                    null
+            );
         }
     }
 
     @EventListener
-    public void handleProductDeleted(ProductDeletedEvent event){
-        Long productId = event.productId();
-        service.softDeleteTransactionsByProduct(productId);
+    @Transactional
+    public void handleProductDeleted(ProductDeletedEvent event) {
+        log.info("Processing ProductDeletedEvent for product {}", event.productId());
+        service.softDeleteTransactionsByProduct(event.productId());
     }
-
 }

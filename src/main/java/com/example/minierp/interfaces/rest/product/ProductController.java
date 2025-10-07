@@ -1,17 +1,17 @@
 package com.example.minierp.interfaces.rest.product;
 
+import com.example.minierp.api.common.ApiResponse;
 import com.example.minierp.application.product.ProductService;
-import com.example.minierp.domain.product.Product;
-import jakarta.persistence.EntityNotFoundException;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/products")
@@ -21,41 +21,40 @@ public class ProductController {
 
     private final ProductService service;
 
-    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
-    public ProductDto create(@RequestBody @Valid CreateProductRequest request){
-        Product product = ProductMapper.toEntity(request);
-        Product saved = service.createProduct(product);
-        return ProductMapper.toDto(saved);
+    @PreAuthorize("hasRole('ADMIN') or hasRole('INVENTORY_MANAGER')")
+    public ResponseEntity<ApiResponse<ProductResponse>> create(@Valid @RequestBody CreateProductRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(service.create(request)));
     }
-    @GetMapping
-    public List<ProductDto> getAll(){
-        return service.getAll()
-                .stream()
-                .map(ProductMapper::toDto)
-                .collect(Collectors.toList());
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('INVENTORY_MANAGER')")
+    public ResponseEntity<ApiResponse<ProductResponse>> update(@PathVariable Long id,
+                                                               @Valid @RequestBody UpdateProductRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(service.update(id, request)));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProductDto> getById(@PathVariable Long id) {
-        try {
-            Product product = service.getById(id);
-            return ResponseEntity.ok(ProductMapper.toDto(product));
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-        }
+    @PreAuthorize("hasRole('ADMIN') or hasRole('INVENTORY_MANAGER') or hasRole('SALES')")
+    public ResponseEntity<ApiResponse<ProductResponse>> findById(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(service.findById(id)));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping
+    @PreAuthorize("hasRole('ADMIN') or hasRole('INVENTORY_MANAGER') or hasRole('SALES')")
+    public ResponseEntity<ApiResponse<Page<ProductResponse>>> findAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok(ApiResponse.success(service.findAll(pageable)));
+    }
+
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id){
-        service.deleteById(id);
-    }
-
-    @PreAuthorize("hasRole('ADMIN')")
-    @PutMapping("/{id}")
-    public void update(@PathVariable Long id,@RequestBody @Valid CreateProductRequest request){
-        Product product = ProductMapper.toEntity(request);
-        service.updateById(id, product);
+    @PreAuthorize("hasRole('ADMIN') or hasRole('INVENTORY_MANAGER')")
+    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
+        service.delete(id);
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

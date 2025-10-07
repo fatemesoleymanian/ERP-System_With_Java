@@ -16,4 +16,8 @@ public interface JpaProductRepository extends JpaRepository<Product, Long> {
 
     @Query("select p from Product p where p.id = :id AND p.deletedAt is NULL")
     Optional<Product> findByIdAndDeletedAtNull(long id);
+
+    @Query("SELECT p FROM Product p WHERE p.category.id = :categoryId")
+    List<Product> findByCategoryId(Long categoryId);
+
 }
