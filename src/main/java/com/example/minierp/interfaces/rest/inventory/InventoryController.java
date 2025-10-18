@@ -1,16 +1,17 @@
 package com.example.minierp.interfaces.rest.inventory;
 
 import com.example.minierp.application.inventory.InventoryService;
-import com.example.minierp.domain.inventory.InventoryTransactionType;
 import com.example.minierp.api.common.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/inventory")
@@ -44,10 +45,14 @@ public class InventoryController {
      */
     @GetMapping("/ledger/{productId}")
     @PreAuthorize("hasRole('INVENTORY_MANAGER') or hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<List<InventoryTransactionDto>>> getProductLedger(
-            @PathVariable Long productId) {
+    public ResponseEntity<ApiResponse<Page<InventoryTransactionDto>>> getProductLedger(
+            @PathVariable Long productId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
 
-        List<InventoryTransactionDto> ledger = service.getProductLedger(productId);
-        return ResponseEntity.ok(ApiResponse.success(ledger));
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok(ApiResponse.success(service.getProductLedger(productId,pageable)));
     }
+
+
 }

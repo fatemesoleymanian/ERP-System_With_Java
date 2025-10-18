@@ -4,8 +4,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface SaleOrderRepository extends JpaRepository<SaleOrder, Long> {
 
@@ -56,5 +59,20 @@ public interface SaleOrderRepository extends JpaRepository<SaleOrder, Long> {
  Page<SaleOrder> findFiltered(OrderStatus status, LocalDateTime from, LocalDateTime to, Pageable pageable);
 
  List<SaleOrder> findByCustomerIdAndStatus(Long customerId, OrderStatus status);
+ @Query("""
+    SELECT SUM(o.totalAmount)
+    FROM SaleOrder o
+    WHERE o.createdAt BETWEEN :startOfMonth AND :endOfMonth
+    AND o.status IN :completedStatuses
+""")
+ Optional<BigDecimal> sumTotalAmountByCreatedAtBetweenAndStatusIn(
+         LocalDateTime startOfMonth, LocalDateTime endOfMonth, List<OrderStatus> completedStatuses);
+
+ // ✅ این متد برای محاسبه سفارشات امروز (Today Orders) استفاده می‌شود
+ Integer countByCreatedAtBetween(LocalDateTime startOfDay, LocalDateTime endOfDay);
+
+ // ✅ این متد برای محاسبه ۵ سفارش آخر (Latest Orders) استفاده می‌شود
+ List<SaleOrder> findTop5ByOrderByCreatedAtDesc();
+
 
 }

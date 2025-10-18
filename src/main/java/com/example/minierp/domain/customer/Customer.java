@@ -43,6 +43,7 @@ public class Customer extends AuditableEntity {
 
     // اطلاعات مالی پایه
     private Double creditLimit;   // سقف اعتبار
+    @Column(nullable = false,  columnDefinition = "BOOLEAN DEFAULT FALSE")
     private Boolean active;       // فعال/غیرفعال
 
 }

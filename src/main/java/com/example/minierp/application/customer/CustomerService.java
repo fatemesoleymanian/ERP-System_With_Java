@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
@@ -84,6 +85,12 @@ public class CustomerService {
         }
         return page.map(this::mapToResponse);
     }
+    @Transactional(readOnly = true)
+    public Page<CustomerResponse> findAllDeleted(Pageable pageable) {
+        Page<Customer> page;
+        page = repository.findAllDeleted(pageable);
+        return page.map(this::mapToResponse);
+    }
 
     @Transactional
     public void delete(Long id) { //soft delete
@@ -91,6 +98,7 @@ public class CustomerService {
                 .orElseThrow(() -> new NotFoundException(id, "مشتری "));
 
         customer.setActive(false);
+        customer.setDeletedAt(LocalDateTime.now());
         repository.save(customer);
 
         eventPublisher.publish(new CustomerDeletedEvent(id));
@@ -115,5 +123,16 @@ public class CustomerService {
                 customer.getCreatedBy(),
                 customer.getLastModifiedBy()
         );
+    }
+
+    @Transactional
+    public CustomerResponse restore(Long customerId) {
+        Customer customer = repository.findById(customerId)
+                .orElseThrow(() -> new NotFoundException(customerId, "مشتری "));
+
+        customer.setDeletedAt(null);
+        repository.save(customer);
+
+        return mapToResponse(customer);
     }
 }

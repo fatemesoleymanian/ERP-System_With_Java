@@ -2,6 +2,7 @@ package com.example.minierp.interfaces.rest.product;
 
 import com.example.minierp.api.common.ApiResponse;
 import com.example.minierp.application.product.ProductService;
+import com.example.minierp.interfaces.rest.customer.CustomerResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -57,4 +58,22 @@ public class ProductController {
         service.delete(id);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
+
+    /** TODO **/
+//    @GetMapping("/trash")
+//    @PreAuthorize("hasRole('ADMIN') or hasRole('SALES')")
+//    public ResponseEntity<ApiResponse<Page<CustomerResponse>>> findAllDeleted(
+//            @RequestParam(defaultValue = "0") int page,
+//            @RequestParam(defaultValue = "20") int size
+//    ) {
+//        Pageable pageable = PageRequest.of(page, size);
+//        Page<CustomerResponse> customerPage = service.findAllDeleted(pageable);
+//        return ResponseEntity.ok(ApiResponse.success(customerPage));
+//    }
+    /** TODO **/
+//    @PutMapping("/{id}/restore")
+//    @PreAuthorize("hasRole('ADMIN') or hasRole('SALES')")
+//    public ResponseEntity<ApiResponse<CustomerResponse>> restore(@PathVariable Long id) {
+//        return ResponseEntity.ok(ApiResponse.success(service.update(id)));
+//    }
 }

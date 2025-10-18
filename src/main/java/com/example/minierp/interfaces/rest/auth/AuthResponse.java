@@ -6,5 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 public record AuthResponse (
         @Schema(description = "توکن کاربر")
-        String token
+        String token,
+        @Schema(description = "نقش کاربر")
+        String role
 ){ }

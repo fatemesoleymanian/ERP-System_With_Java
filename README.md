@@ -81,16 +81,22 @@ Product listing and detail APIs are cached using Spring's annotation-based cachi
 
 ## 🧪 Testing (WIP)
 
-* Unit tests using JUnit 5
-* Security and controller layer tests planned
+* Unit And Integration tests using JUnit 5
 
-## 📌 To Do
+The project includes both **unit** and **integration** tests.
 
-* [ ] Email Notifications (e.g. on order)
-* [ ] User Profile Management
-* [ ] Advanced Reporting (PDF Export)
-* [ ] Multi-tenant support
+- **AuthServiceTest** (unit):
+    - Tests registration logic, duplicate username validation, login validation, and JWT generation.
+    - Uses Mockito for mocking and AssertJ for fluent assertions.
 
+- **AuthControllerIntegrationTest** (integration):
+    - Tests actual HTTP endpoints (`/api/auth/register`, `/api/auth/login`) using MockMvc.
+    - Runs with in-memory H2 database and full Spring context.
+
+Run all tests:
+```bash
+mvn test
+```
 ## 👨‍💻 Author
 
 **Fateme Soleymanian**

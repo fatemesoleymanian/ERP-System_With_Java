@@ -10,6 +10,6 @@ public record LoginRequest (
         String username,
         @NotBlank(message = "رمزعبور الزامی است")
         @Size(max = 20, message = "رمزعبور نمی‌تواند بیشتر از 20 کاراکتر باشد")
-        @Size(min = 5, message = "رمزعبور نمی‌تواند کمتر از 5 کاراکتر باشد")
+        @Size(min = 8, message = "رمزعبور نمی‌تواند کمتر از 8 کاراکتر باشد")
         String password
 ){ }

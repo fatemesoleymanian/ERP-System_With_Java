@@ -28,20 +28,26 @@ public class ProductExportService {
             Sheet sheet = workbook.createSheet("Products");
 
             Row header = sheet.createRow(0);
-            header.createCell(0).setCellValue("ID");
-            header.createCell(1).setCellValue("Name");
-            header.createCell(2).setCellValue("Price");
+            header.createCell(0).setCellValue("شناسه");
+            header.createCell(1).setCellValue("نام");
+            header.createCell(2).setCellValue("قیمت");
             header.createCell(3).setCellValue("SKU");
-            header.createCell(4).setCellValue("QTY");
+            header.createCell(4).setCellValue("موجودی");
+            header.createCell(5).setCellValue("دسته بندی");
+            header.createCell(6).setCellValue("تخفیف مبلغ");
+            header.createCell(7).setCellValue("تخفیف درصد");
 
             int rowIdx = 1;
             for (Product product : products) {
                 Row row = sheet.createRow(rowIdx++);
                 row.createCell(0).setCellValue(product.getId());
                 row.createCell(1).setCellValue(product.getName());
-                row.createCell(2).setCellValue((RichTextString) product.getPrice());
+                row.createCell(2).setCellValue(product.getPrice().doubleValue());
                 row.createCell(3).setCellValue(product.getSku());
                 row.createCell(4).setCellValue(product.getQuantity());
+                row.createCell(5).setCellValue(product.getCategory().getName());
+                row.createCell(6).setCellValue(product.getDiscountValue().doubleValue());
+                row.createCell(7).setCellValue(product.getDiscountPercentage());
             }
 
             workbook.write(out);

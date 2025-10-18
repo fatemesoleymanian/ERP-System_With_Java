@@ -78,5 +78,10 @@ public class ProductRepositoryImpl implements ProductRepository {
         return jpaRepo.existsBySku(sku);
     }
 
+    @Override
+    public Optional<Integer> sumQuantity() {
+        return jpaRepo.sumQuantity();
+    }
+
 
 }

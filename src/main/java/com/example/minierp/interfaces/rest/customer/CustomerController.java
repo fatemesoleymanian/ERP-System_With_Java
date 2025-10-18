@@ -35,6 +35,12 @@ public class CustomerController {
         return ResponseEntity.ok(ApiResponse.success(service.update(id, request)));
     }
 
+    @PutMapping("/{id}/restore")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SALES')")
+    public ResponseEntity<ApiResponse<CustomerResponse>> restore(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(service.restore(id)));
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('SALES')")
     public ResponseEntity<ApiResponse<CustomerResponse>> findById(@PathVariable Long id) {
@@ -50,6 +56,16 @@ public class CustomerController {
     ) {
         Pageable pageable = PageRequest.of(page, size);
         Page<CustomerResponse> customerPage = service.findAll(active, pageable);
+        return ResponseEntity.ok(ApiResponse.success(customerPage));
+    }
+    @GetMapping("/trash")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SALES')")
+    public ResponseEntity<ApiResponse<Page<CustomerResponse>>> findAllDeleted(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<CustomerResponse> customerPage = service.findAllDeleted(pageable);
         return ResponseEntity.ok(ApiResponse.success(customerPage));
     }
 

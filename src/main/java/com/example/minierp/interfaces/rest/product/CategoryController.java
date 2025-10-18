@@ -1,7 +1,12 @@
 package com.example.minierp.interfaces.rest.product;
 
+import com.example.minierp.api.common.ApiResponse;
 import com.example.minierp.application.product.CategoryService;
+import com.example.minierp.interfaces.rest.customer.CustomerResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -12,6 +17,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/categories")
 @RequiredArgsConstructor
+@CrossOrigin
 public class CategoryController {
 
     private final CategoryService categoryService;
@@ -23,8 +29,10 @@ public class CategoryController {
     }
 
     @GetMapping
-    public ResponseEntity<List<CategoryResponse>> findAll() {
-        return ResponseEntity.ok(categoryService.findAll());
+    public ResponseEntity<ApiResponse<Page<CategoryResponse>>> findAll(@RequestParam(defaultValue = "0") int page,
+                                                          @RequestParam(defaultValue = "20") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok(ApiResponse.success(categoryService.findAll(pageable)));
     }
 
     @GetMapping("/{id}")

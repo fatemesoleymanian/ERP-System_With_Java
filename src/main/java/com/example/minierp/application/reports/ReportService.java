@@ -5,15 +5,19 @@ import com.example.minierp.domain.reports.ReportCriteria;
 import com.example.minierp.domain.sales.SaleOrder;
 import com.example.minierp.domain.sales.SaleOrderRepository;
 import com.lowagie.text.*;
+import com.lowagie.text.pdf.BaseFont;
 import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
+import io.jsonwebtoken.io.IOException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
+import java.text.NumberFormat;
 import java.util.List;
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +25,30 @@ public class ReportService {
 
     private final SaleOrderRepository saleOrderRepository;
     private final ProductRepository productRepository;
+
+    private static final NumberFormat numberFormat = NumberFormat.getInstance(Locale.US);
+
+    private static BaseFont FARSI_BASE_FONT;
+    private static Font FARSI_NORMAL_FONT;
+    private static Font FARSI_BOLD_FONT;
+
+    static {
+        try {
+            FARSI_BASE_FONT = BaseFont.createFont("fonts/Vazir.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+
+            FARSI_NORMAL_FONT = new Font(FARSI_BASE_FONT, 10, Font.NORMAL);
+
+
+            FARSI_BOLD_FONT = new Font(FARSI_BASE_FONT, 18, Font.BOLD);
+
+        } catch (DocumentException | IOException e) {
+            System.err.println("FATAL: Could not load Farsi font! " + e.getMessage());
+            FARSI_NORMAL_FONT = FontFactory.getFont(FontFactory.HELVETICA, 10, Font.NORMAL);
+            FARSI_BOLD_FONT = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18, Font.BOLD);
+        } catch (java.io.IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     public byte[] generateReport(ReportCriteria criteria) throws DocumentException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -60,26 +88,33 @@ public class ReportService {
                     .toList();
         }
 
-        Paragraph title = new Paragraph("Sales Report", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18));
-        doc.add(title);
-        doc.add(new Paragraph(" "));
+        doc.add(createFarsiParagraphTable("گزارش فروش", FARSI_BOLD_FONT));
+        doc.add(createFarsiParagraphTable(" ", FARSI_NORMAL_FONT));
 
         PdfPTable table = new PdfPTable(7);
         table.setWidthPercentage(100);
-        addHeader(table, "Order#", "Customer", "Status", "SubTotal", "Tax", "Total", "Created At");
+        addHeader(table, "سفارش#", "مشتری", "وضعیت", "جمع جزء", "مالیات", "جمع کل", "تاریخ ایجاد");
 
         BigDecimal totalSub = BigDecimal.ZERO;
         BigDecimal totalTax = BigDecimal.ZERO;
         BigDecimal totalAmount = BigDecimal.ZERO;
 
         for (SaleOrder o : orders) {
-            table.addCell(o.getOrderNumber());
-            table.addCell(o.getCustomer().getName());
-            table.addCell(o.getStatus().name());
-            table.addCell(o.getSubTotal().toString());
-            table.addCell(o.getTaxAmount().toString());
-            table.addCell(o.getTotalAmount().toString());
-            table.addCell(o.getCreatedAt().toString());
+//            table.addCell(o.getOrderNumber());
+//            table.addCell(o.getCustomer().getName());
+//            table.addCell(o.getStatus().name());
+//            table.addCell(formatAmount(o.getSubTotal()));
+//            table.addCell(formatAmount(o.getTaxAmount()));
+//            table.addCell(formatAmount(o.getTotalAmount()));
+//            table.addCell(o.getCreatedAt().toString());
+
+            table.addCell(createFarsiCell(o.getOrderNumber(), FARSI_NORMAL_FONT));
+            table.addCell(createFarsiCell(o.getCustomer().getName(), FARSI_NORMAL_FONT));
+            table.addCell(createFarsiCell(o.getStatus().name(), FARSI_NORMAL_FONT));
+            table.addCell(createFarsiCell(formatAmount(o.getSubTotal()), FARSI_NORMAL_FONT));
+            table.addCell(createFarsiCell(formatAmount(o.getTaxAmount()), FARSI_NORMAL_FONT));
+            table.addCell(createFarsiCell(formatAmount(o.getTotalAmount()), FARSI_NORMAL_FONT));
+            table.addCell(createFarsiCell(o.getCreatedAt().toString(), FARSI_NORMAL_FONT));
 
             totalSub = totalSub.add(o.getSubTotal());
             totalTax = totalTax.add(o.getTaxAmount());
@@ -87,36 +122,41 @@ public class ReportService {
         }
         doc.add(table);
 
-        doc.add(new Paragraph(" "));
-        doc.add(new Paragraph("Summary:"));
-        doc.add(new Paragraph("Total SubTotal: " + totalSub));
-        doc.add(new Paragraph("Total Tax: " + totalTax));
-        doc.add(new Paragraph("Total Amount: " + totalAmount));
+//        doc.add(new Paragraph(" "));
+//        doc.add(new Paragraph("خلاصه سفارش:"));
+//        doc.add(new Paragraph("جمع جزء کل: " + formatAmount(totalSub)));
+//        doc.add(new Paragraph("مالیات کل: " + formatAmount(totalTax)));
+//        doc.add(new Paragraph("مبلغ کل: " + formatAmount(totalAmount)));
+        doc.add(createFarsiParagraphTable(" ", FARSI_NORMAL_FONT));
+        doc.add(createFarsiParagraphTable("خلاصه سفارش:", FARSI_NORMAL_FONT));
+        doc.add(createFarsiParagraphTable("جمع جزء کل: " + formatAmount(totalSub), FARSI_NORMAL_FONT));
+        doc.add(createFarsiParagraphTable("مالیات کل: " + formatAmount(totalTax), FARSI_NORMAL_FONT));
+        doc.add(createFarsiParagraphTable("مبلغ کل: " + formatAmount(totalAmount), FARSI_NORMAL_FONT));
     }
-
     // ----------------- INVENTORY -----------------
     private void generateInventoryReport(Document doc, ReportCriteria criteria) throws DocumentException {
         var products = criteria.productId() != null ?
                 productRepository.findById(criteria.productId()).stream().toList() :
                 productRepository.findAll();
 
-        Paragraph title = new Paragraph("Inventory Report", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18));
-        doc.add(title);
-        doc.add(new Paragraph(" "));
+        doc.add(createFarsiParagraphTable("گزارش موجودی کالا", FARSI_BOLD_FONT));
+        doc.add(createFarsiParagraphTable(" ", FARSI_NORMAL_FONT));
+
 
         PdfPTable table = new PdfPTable(5);
         table.setWidthPercentage(100);
-        addHeader(table, "Product", "Category", "Quantity", "Low Stock Threshold", "Price");
+        addHeader(table, "کالا", "دسته‌بندی", "تعداد موجودی", "آستانه کمبود", "قیمت واحد");
 
         int lowStockThreshold = 5;
 
         for (var p : products) {
-            table.addCell(p.getName());
-            table.addCell(p.getCategory() != null ? p.getCategory().getName() : "-");
-            table.addCell(String.valueOf(p.getQuantity()));
-            table.addCell(p.getQuantity() < lowStockThreshold ? "⚠ " + lowStockThreshold : String.valueOf(lowStockThreshold));
-            table.addCell(p.getPrice().toString());
+            table.addCell(createFarsiCell(p.getName(), FARSI_NORMAL_FONT));
+            table.addCell(createFarsiCell(p.getCategory() != null ? p.getCategory().getName() : "-", FARSI_NORMAL_FONT));
+            table.addCell(createFarsiCell(String.valueOf(p.getQuantity()), FARSI_NORMAL_FONT));
+            table.addCell(createFarsiCell(p.getQuantity() < lowStockThreshold ? "⚠ کمتر از " + lowStockThreshold : String.valueOf(lowStockThreshold), FARSI_NORMAL_FONT));
+            table.addCell(createFarsiCell(formatAmount(p.getPrice()), FARSI_NORMAL_FONT));
         }
+        doc.add(table);
     }
 
     // ----------------- PRODUCT -----------------
@@ -128,19 +168,21 @@ public class ReportService {
                     .toList();
         }
 
-        Paragraph title = new Paragraph("Product Report", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18));
-        doc.add(title);
-        doc.add(new Paragraph(" "));
+        doc.add(createFarsiParagraphTable("گزارش محصولات", FARSI_BOLD_FONT));
+        doc.add(createFarsiParagraphTable(" ", FARSI_NORMAL_FONT));
+
 
         PdfPTable table = new PdfPTable(3);
         table.setWidthPercentage(100);
-        addHeader(table, "Product", "Price", "Category");
+        addHeader(table, "نام محصول", "قیمت", "دسته‌بندی");
 
         for (var p : products) {
-            table.addCell(p.getName());
-            table.addCell(p.getPrice().toString());
-            table.addCell(p.getCategory() != null ? p.getCategory().getName() : "-");
+            table.addCell(createFarsiCell(p.getName(), FARSI_NORMAL_FONT));
+            table.addCell(createFarsiCell(formatAmount(p.getPrice()), FARSI_NORMAL_FONT));
+            table.addCell(createFarsiCell(p.getCategory() != null ? p.getCategory().getName() : "-", FARSI_NORMAL_FONT));
         }
+        doc.add(table);
+
     }
 
     // ----------------- CATEGORY -----------------
@@ -150,25 +192,60 @@ public class ReportService {
                 .distinct()
                 .toList();
 
-        Paragraph title = new Paragraph("Category Report", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18));
-        doc.add(title);
-        doc.add(new Paragraph(" "));
+        doc.add(createFarsiParagraphTable("گزارش دسته‌بندی‌ها", FARSI_BOLD_FONT));
+        doc.add(createFarsiParagraphTable(" ", FARSI_NORMAL_FONT));
+
 
         PdfPTable table = new PdfPTable(2);
         table.setWidthPercentage(100);
-        addHeader(table, "Category", "Number of Products");
+        addHeader(table, "نام دسته‌بندی", "تعداد محصولات");
 
         for (var c : categories) {
-            table.addCell(c.getName());
+            table.addCell(createFarsiCell(c.getName(), FARSI_NORMAL_FONT));
             long count = productRepository.findByCategoryId(c.getId()).size();
-            table.addCell(String.valueOf(count));
+            table.addCell(createFarsiCell(String.valueOf(count), FARSI_NORMAL_FONT));
         }
+        doc.add(table);
+
     }
 
+    // helper methods
     private void addHeader(PdfPTable table, String... headers) {
+        Font headerFont = new Font(FARSI_BASE_FONT, 10, Font.BOLD);
+
         for (String h : headers) {
-            PdfPCell cell = new PdfPCell(new Phrase(h, FontFactory.getFont(FontFactory.HELVETICA_BOLD)));
+            PdfPCell cell = createFarsiCell(h, headerFont);
+            cell.setHorizontalAlignment(Element.ALIGN_CENTER);
             table.addCell(cell);
         }
     }
+
+    private PdfPTable createFarsiParagraphTable(String text, Font font) throws DocumentException {
+        PdfPTable table = new PdfPTable(1);
+        table.setWidthPercentage(100);
+        table.getDefaultCell().setBorder(Rectangle.NO_BORDER);
+        table.setSpacingBefore(5f);
+
+        PdfPCell cell = createFarsiCell(text, font);
+        cell.setBorder(Rectangle.NO_BORDER);
+        cell.setPadding(0f);
+
+        table.addCell(cell);
+        return table;
+    }
+    private PdfPCell createFarsiCell(String text, Font font) {
+        Chunk chunk = new Chunk(text, font);
+        Phrase phrase = new Phrase();
+        phrase.add(chunk);
+
+        PdfPCell cell = new PdfPCell(phrase);
+        cell.setRunDirection(PdfWriter.RUN_DIRECTION_RTL);
+        cell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+        return cell;
+    }
+
+    private String formatAmount(BigDecimal amount) {
+        return numberFormat.format(amount);
+    }
+
 }

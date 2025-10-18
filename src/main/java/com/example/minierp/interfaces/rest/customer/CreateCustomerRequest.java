@@ -16,6 +16,8 @@ public record CreateCustomerRequest(
         String contactPerson,
 
         @Pattern(regexp = "^[0-9\\-+]{7,15}$", message = "فرمت شماره تلفن نامعتبر است")
+        @Size(max = 11, message = "شماره تلفن صحیح نیست")
+        @Size(min = 11, message = "شماره تلفن صحیح نیست")
         String phone,
 
         @Email(message = "آدرس ایمیل نامعتبر است")

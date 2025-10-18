@@ -22,5 +22,5 @@ public interface ProductRepository {
     boolean existsBySku(String sku);
 
 
-
+    Optional<Integer> sumQuantity();
 }

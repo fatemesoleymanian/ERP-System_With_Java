@@ -33,12 +33,13 @@ public class AuthService { //bcryption and generating token
                 .username(request.username())
                 .password(encoder.encode(request.password()))
                 .role(Role.valueOf(request.role().toUpperCase()))
+                .active(true)
                 .build();
         repository.save(user);
 
         String token = jwtService.generateToken(user);
 
-        return new AuthResponse(token);
+        return new AuthResponse(token,user.getRole().name());
     }
 
     public AuthResponse login(LoginRequest request){
@@ -50,7 +51,7 @@ public class AuthService { //bcryption and generating token
         }
 
         String token = jwtService.generateToken(user);
-        return new AuthResponse(token);
+        return new AuthResponse(token, user.getRole().name());
     }
 
 
@@ -59,7 +60,7 @@ public class AuthService { //bcryption and generating token
         User user = repository.findByUsername(username)
                 .orElseThrow(() -> new NotFoundException("کاربر"));
         String newToken = jwtService.generateToken(user);
-        return new AuthResponse(newToken);
+        return new AuthResponse(newToken, user.getRole().name());
     }
 
     public void logout(String token) {
@@ -70,6 +71,7 @@ public class AuthService { //bcryption and generating token
     public void forgotPassword(String username) {
         User user = repository.findByUsername(username)
                 .orElseThrow(() -> new NotFoundException("کاربر"));
+        /** TODO OTP **/
         // تولید توکن موقت (مثلاً JWT با عمر کوتاه)
         String resetToken = jwtService.generateResetToken(user);
         // اینجا معمولاً ایمیل زده میشه به کاربر با لینک reset

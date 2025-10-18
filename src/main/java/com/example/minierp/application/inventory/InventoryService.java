@@ -12,10 +12,12 @@ import com.example.minierp.domain.shared.DomainEventPublisher;
 import com.example.minierp.interfaces.rest.inventory.InventoryTransactionDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -101,18 +103,30 @@ public class InventoryService {
     /**
      * Retrieve product ledger with running balance
      */
-    @Transactional(readOnly = true)
-    public List<InventoryTransactionDto> getProductLedger(Long productId) {
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new NotFoundException(productId,"Product"));
 
-        List<InventoryTransaction> transactions =
-                transactionRepository.findByProductIdOrderByCreatedAtAsc(productId);
+    @Transactional(readOnly = true)
+    public Page<InventoryTransactionDto> getProductLedger(Long productId, Pageable pageable) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new NotFoundException(productId, "Product"));
+
+        Integer totalBalance = transactionRepository.getTotalBalance(productId);
+        int expectedBalance = totalBalance != null ? totalBalance : 0;
+        if (expectedBalance != product.getQuantity()) {
+            throw new IllegalStateException("Ledger and product quantity mismatch!");
+        }
+
+        Page<InventoryTransaction> txPage = transactionRepository.findByProductIdOrderByCreatedAtAsc(productId, pageable);
 
         int runningBalance = 0;
+        if (!txPage.isEmpty()) {
+            InventoryTransaction first = txPage.getContent().get(0);
+            Integer initial = transactionRepository.getBalanceBefore(productId, first.getCreatedAt(), first.getId());
+            runningBalance = initial != null ? initial : 0;
+        }
+
         List<InventoryTransactionDto> ledger = new ArrayList<>();
 
-        for (InventoryTransaction tx : transactions) {
+        for (InventoryTransaction tx : txPage.getContent()) {
             runningBalance = tx.getType() == InventoryTransactionType.IN
                     ? runningBalance + tx.getQuantity()
                     : runningBalance - tx.getQuantity();
@@ -130,13 +144,8 @@ public class InventoryService {
             ));
         }
 
-        if (runningBalance != product.getQuantity()) {
-            throw new IllegalStateException("Ledger and product quantity mismatch!");
-        }
-
-        return ledger;
+        return new PageImpl<>(ledger, pageable, txPage.getTotalElements());
     }
-
     /**
      * Soft delete transactions by product ID
      */

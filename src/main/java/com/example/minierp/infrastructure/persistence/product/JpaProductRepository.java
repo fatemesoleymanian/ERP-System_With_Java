@@ -22,5 +22,6 @@ public interface JpaProductRepository extends JpaRepository<Product, Long> {
 
     boolean existsBySku(String sku);
 
-
+    @Query("SELECT SUM(p.quantity) FROM Product p WHERE p.deletedAt IS NULL")
+    Optional<Integer> sumQuantity();
 }
