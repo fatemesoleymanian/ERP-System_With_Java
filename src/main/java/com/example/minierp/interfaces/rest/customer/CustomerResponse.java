@@ -13,6 +13,9 @@ public record CustomerResponse(
         @Schema(description = "شماره مشتری (کد منحصر به‌فرد مشتری در سیستم)")
         String customerNumber,
 
+        @Schema(description = "کد اقتصادی مشتری")
+        String economicCode,
+
         @Schema(description = "نام مشتری")
         String name,
 

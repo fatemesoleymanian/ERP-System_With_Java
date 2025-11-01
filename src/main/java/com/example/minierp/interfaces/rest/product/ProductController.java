@@ -14,6 +14,11 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.TreeSet;
+
 @RestController
 @RequestMapping("/api/products")
 @RequiredArgsConstructor

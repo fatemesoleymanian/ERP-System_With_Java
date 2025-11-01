@@ -17,6 +17,9 @@ public record UpdateProductRequest(
         @Positive(message = "شناسه دسته‌بندی باید مثبت باشد")
         Long categoryId,
 
+        @NotNull(message = "نرخ مالیات الزامی است")
+        @Positive(message = "شناسه نرخ مالیات باید مثبت باشد")
+        Long vatRateId,
         @NotNull(message = "قیمت محصول الزامی است")
         @DecimalMin(value = "0.0", message = "قیمت نمی‌تواند منفی باشد")
         BigDecimal price,

@@ -31,5 +31,7 @@ public record UpdateCustomerRequest(
         @DecimalMin(value = "0.0", message = "سقف اعتبار نمی‌تواند منفی باشد")
         Double creditLimit,
 
-        Boolean active
+        Boolean active,
+        @NotBlank(message = "کد اقتصادی مشتری را وارد کنید.")
+        String economicCode
 ) {}

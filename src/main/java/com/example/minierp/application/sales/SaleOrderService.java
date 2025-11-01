@@ -4,6 +4,8 @@ import com.example.minierp.domain.common.exceptions.*;
 import com.example.minierp.domain.customer.CustomerRepository;
 import com.example.minierp.domain.product.Product;
 import com.example.minierp.domain.product.ProductRepository;
+import com.example.minierp.domain.product.VatRate;
+import com.example.minierp.domain.product.VatRateRepository;
 import com.example.minierp.domain.sales.*;
 import com.example.minierp.domain.shared.DomainEventPublisher;
 import com.example.minierp.interfaces.rest.sales.CreateOrderRequest;
@@ -25,13 +27,64 @@ import java.util.*;
 @RequiredArgsConstructor
 public class SaleOrderService {
 
+    private final VatRateRepository vatRateRepository;
     private final ProductRepository productRepository;
     private final SaleOrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final CustomerRepository customerRepository;
     private final DomainEventPublisher eventPublisher;
 
-    // ---------------------- CREATE ----------------------
+    // ---------------------- CREATE DRAFT ----------------------
+    @Transactional
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SALES')")
+    public SaleOrder draftOrder(List<CreateOrderRequest.CreateOrderItem> items,
+                                Long customerId,
+                                BigDecimal orderDiscountValue,
+                                BigDecimal orderDiscountPercent,
+                                LocalDateTime desiredDeliveryFrom,
+                                LocalDateTime desiredDeliveryTo) {
+
+        log.info("Drafting new order with {} items for customer={}", items.size(), customerId);
+
+        var customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new NotFoundException(customerId, "مشتری"));
+
+        List<OrderItem> orderItems = new ArrayList<>();
+        SaleOrder order = SaleOrder.builder()
+                .orderNumber(UUID.randomUUID().toString())
+                .status(OrderStatus.DRAFT) // Set status to DRAFT
+                .orderDiscountValue(orderDiscountValue)
+                .orderDiscountPercent(orderDiscountPercent)
+                .desiredDeliveryFrom(desiredDeliveryFrom)
+                .desiredDeliveryTo(desiredDeliveryTo)
+                .customer(customer)
+                .build();
+
+        for (var item : items) {
+            Product product = productRepository.findById(item.productId())
+                    .orElseThrow(() -> new NotFoundException(item.productId(), "محصول"));
+
+            // For drafts, we don't check stock or decrease quantity
+            orderItems.add(OrderItem.builder()
+                    .order(order)
+                    .product(product)
+                    .quantity(item.quantity())
+                    .price(product.getPrice())
+                    .discountValue(item.discountValue())
+                    .discountPercent(item.discountPercent())
+                    .build());
+        }
+
+        order.setItems(orderItems);
+        calculateTotals(order);
+
+        SaleOrder saved = orderRepository.save(order);
+        log.info("✅ Order {} drafted successfully", saved.getOrderNumber());
+        return saved;
+    }
+
+
+    // ---------------------- PLACE ORDER ----------------------
     @Transactional
     @CacheEvict(value = "products", allEntries = true)
     @PreAuthorize("hasRole('ADMIN') or hasRole('SALES')")
@@ -83,10 +136,40 @@ public class SaleOrderService {
         SaleOrder saved = orderRepository.save(order);
         eventPublisher.publish(new OrderPlacedEvent(UUID.randomUUID().toString(), saved));
 
-        /** TODO inventory has a problem after order placed **/
         log.info("✅ Order {} placed successfully", saved.getOrderNumber());
         return saved;
     }
+
+    @Transactional
+    @CacheEvict(value = "products", allEntries = true)
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SALES')")
+    public SaleOrder placeOrderFromDraft(Long orderId) {
+        SaleOrder order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new NotFoundException(orderId, "سفارش"));
+
+        if (order.getStatus() != OrderStatus.DRAFT) {
+            throw new DynamicTextException("Only draft orders can be placed.");
+        }
+
+        // Now, perform stock check and deduction
+        for (OrderItem item : order.getItems()) {
+            Product product = productRepository.findById(item.getProduct().getId())
+                    .orElseThrow(() -> new NotFoundException(item.getProduct().getId(), "محصول"));
+
+            if (product.getQuantity() < item.getQuantity()) {
+                throw new InsufficientStockException(product.getName(), product.getQuantity());
+            }
+
+            product.setQuantity(product.getQuantity() - item.getQuantity());
+        }
+
+        order.setStatus(OrderStatus.PLACED);
+        SaleOrder saved = orderRepository.save(order);
+        eventPublisher.publish(new OrderPlacedEvent(UUID.randomUUID().toString(), saved));
+        log.info("✅ Order {} placed successfully from draft", saved.getOrderNumber());
+        return saved;
+    }
+
 
     // ---------------------- UPDATE ----------------------
     @Transactional
@@ -106,24 +189,29 @@ public class SaleOrderService {
         if (order.getStatus() == OrderStatus.CANCELLED)
             throw new DynamicTextException("سفارش کنسل شده است.");
 
-        List<OrderItem> oldItems = new ArrayList<>(order.getItems());
+        boolean isDraft = order.getStatus() == OrderStatus.DRAFT;
 
-        // بازگرداندن موجودی محصولات قبلی
-        oldItems.forEach(item -> {
-            Product product = item.getProduct();
-            product.setQuantity(product.getQuantity() + item.getQuantity());
-        });
+        // Only restore stock if the order was NOT in draft state
+        if (!isDraft) {
+            order.getItems().forEach(item -> {
+                Product product = item.getProduct();
+                product.setQuantity(product.getQuantity() + item.getQuantity());
+            });
+        }
 
         order.getItems().clear();
+        orderItemRepository.deleteByOrderId(orderId); // Clear old items
 
         for (var newItem : newItems) {
             Product product = productRepository.findById(newItem.productId())
                     .orElseThrow(() -> new NotFoundException(newItem.productId(), "محصول"));
 
-            if (product.getQuantity() < newItem.quantity())
-                throw new InsufficientStockException(product.getName(), product.getQuantity());
-
-            product.setQuantity(product.getQuantity() - newItem.quantity());
+            // Only deduct stock if the order is NOT a draft
+            if (!isDraft) {
+                if (product.getQuantity() < newItem.quantity())
+                    throw new InsufficientStockException(product.getName(), product.getQuantity());
+                product.setQuantity(product.getQuantity() - newItem.quantity());
+            }
 
             order.getItems().add(OrderItem.builder()
                     .order(order)
@@ -145,10 +233,13 @@ public class SaleOrderService {
         calculateTotals(order);
         SaleOrder saved = orderRepository.save(order);
 
-        eventPublisher.publish(new OrderUpdatedEvent(UUID.randomUUID().toString(), orderId, saved, oldItems));
+        // Consider if you need a different event for draft updates
+        // eventPublisher.publish(new OrderUpdatedEvent(...));
         log.info("✅ Order {} updated successfully", saved.getOrderNumber());
         return saved;
     }
+
+    // ... Keep the rest of your service methods as they are
 
     // ---------------------- CANCEL ----------------------
     @Transactional
@@ -160,17 +251,19 @@ public class SaleOrderService {
         if (order.getStatus() == OrderStatus.CANCELLED)
             throw new OrderAlreadyCancelledException(orderId);
 
-        order.getItems().forEach(item -> {
-            Product product = item.getProduct();
-            product.setQuantity(product.getQuantity() + item.getQuantity());
-        });
+        // Only return stock if the order was not a draft
+        if (order.getStatus() != OrderStatus.DRAFT) {
+            order.getItems().forEach(item -> {
+                Product product = item.getProduct();
+                product.setQuantity(product.getQuantity() + item.getQuantity());
+            });
+        }
 
         order.setStatus(OrderStatus.CANCELLED);
         order.setCancelReason(reason);
 
         SaleOrder saved = orderRepository.save(order);
 
-        // You can log it and save it in db for tracking order
         eventPublisher.publish(new OrderCancelledEvent(UUID.randomUUID().toString(), saved, reason));
 
         log.info("🚫 Order {} cancelled", orderId);
@@ -294,6 +387,11 @@ public class SaleOrderService {
     // ---------------------- UTILITIES ----------------------
     private void calculateTotals(SaleOrder order) {
         BigDecimal subTotal = BigDecimal.ZERO;
+        BigDecimal totalTax = BigDecimal.ZERO;
+
+        // Find the default VAT rate once, to be used if a product has no specific rate
+        VatRate defaultVatRate = vatRateRepository.findByIsDefaultTrue()
+                .orElse(new VatRate(null, "Default", new BigDecimal("0.09"), true)); // Fallback to 9% if no default is set
 
         for (OrderItem item : order.getItems()) {
             BigDecimal lineTotal = item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
@@ -304,19 +402,26 @@ public class SaleOrderService {
                 lineTotal = lineTotal.subtract(lineTotal.multiply(item.getDiscountPercent().divide(BigDecimal.valueOf(100))));
 
             subTotal = subTotal.add(lineTotal);
+
+            // Calculate tax for this line item based on its product's VAT rate
+            VatRate itemVatRate = item.getProduct().getVatRate() != null ? item.getProduct().getVatRate() : defaultVatRate;
+            BigDecimal itemTax = lineTotal.multiply(itemVatRate.getRate());
+            totalTax = totalTax.add(itemTax);
         }
 
-        if (order.getOrderDiscountValue() != null)
+        if (order.getOrderDiscountValue() != null) {
             subTotal = subTotal.subtract(order.getOrderDiscountValue());
-        if (order.getOrderDiscountPercent() != null)
+        }
+        if (order.getOrderDiscountPercent() != null) {
             subTotal = subTotal.subtract(subTotal.multiply(order.getOrderDiscountPercent().divide(BigDecimal.valueOf(100))));
+        }
+
 
         if (subTotal.compareTo(BigDecimal.ZERO) < 0)
             throw new DynamicTextException("در محاسبه مبلغ سفارش خطایی رخ داد!");
 
         order.setSubTotal(subTotal);
-        BigDecimal tax = subTotal.multiply(BigDecimal.valueOf(0.09));
-        order.setTaxAmount(tax);
-        order.setTotalAmount(subTotal.add(tax));
+        order.setTaxAmount(totalTax); // Use the calculated total tax
+        order.setTotalAmount(subTotal.add(totalTax));
     }
 }

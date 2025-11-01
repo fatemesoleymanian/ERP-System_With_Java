@@ -1,14 +1,9 @@
-package com.example.minierp.application;
+package com.example.minierp.application.user;
 
 import com.example.minierp.domain.common.exceptions.NotFoundException;
-import com.example.minierp.domain.product.Category;
-import com.example.minierp.domain.product.Product;
-import com.example.minierp.domain.product.ProductUpdatedEvent;
 import com.example.minierp.domain.user.Role;
 import com.example.minierp.domain.user.User;
 import com.example.minierp.domain.user.UserRepository;
-import com.example.minierp.interfaces.rest.product.ProductResponse;
-import com.example.minierp.interfaces.rest.product.UpdateProductRequest;
 import com.example.minierp.interfaces.rest.users.UpdateUserRequest;
 import com.example.minierp.interfaces.rest.users.UserResponse;
 import lombok.RequiredArgsConstructor;

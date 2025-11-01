@@ -19,6 +19,13 @@ public record ProductResponse(
         @Schema(description = "دسته بندی محصول")
         String categoryName,
 
+        @Schema(description = "شناسه نرخ مالیات بر ارزش افزوده")
+        Long vatRateId,
+        @Schema(description = "نام نرخ مالیات بر ارزش افزوده")
+        String vatRateName,
+
+        @Schema(description = "درصد مالیات بر ارزش افزوده")
+        BigDecimal vatRate,
 
         @Schema(description = "قیمت محصول")
         BigDecimal price,

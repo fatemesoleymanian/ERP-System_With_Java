@@ -6,13 +6,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedBy;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedBy;
-import org.springframework.data.annotation.LastModifiedDate;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Entity
 @Data
@@ -46,6 +41,10 @@ public class Product extends AuditableEntity {
 
     private BigDecimal discountValue; // optional discount
     private Double discountPercentage; // optional discount
+
+    @ManyToOne
+    @JoinColumn(name = "vat_rate_id")
+    private VatRate vatRate;
 
 }
 

@@ -62,12 +62,16 @@ public class ProductRepositoryImpl implements ProductRepository {
             existingProduct.setQuantity(product.getQuantity());
             existingProduct.setSku(product.getSku());
 
+            // --- ADDED VAT RATE UPDATE ---
+            existingProduct.setVatRate(product.getVatRate());
+            existingProduct.setCategory(product.getCategory());
+            // -----------------------------
+
             jpaRepo.save(existingProduct);
         } else {
             throw new EntityNotFoundException("Product with ID " + id + " not found");
         }
     }
-
     @Override
     public List<Product> findByQuantityLessThanEqual(int threshold) {
         return jpaRepo.findByQuantityLessThanEqualAndDeletedAtNull(threshold);

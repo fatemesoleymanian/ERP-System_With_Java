@@ -28,6 +28,7 @@ public class CustomerService {
 
         Customer customer = Customer.builder()
                 .customerNumber(customerNumber)
+                .economicCode(request.economicCode())
                 .name(request.name())
                 .type(request.type())
                 .contactPerson(request.contactPerson())
@@ -52,6 +53,7 @@ public class CustomerService {
                 .orElseThrow(() -> new NotFoundException(id, "Customer"));
 
         customer.setName(request.name());
+        customer.setEconomicCode(request.economicCode());
         customer.setType(request.type());
         customer.setContactPerson(request.contactPerson());
         customer.setPhone(request.phone());
@@ -109,6 +111,7 @@ public class CustomerService {
         return new CustomerResponse(
                 customer.getId(),
                 customer.getCustomerNumber(),
+                customer.getEconomicCode(),
                 customer.getName(),
                 customer.getType(),
                 customer.getContactPerson(),

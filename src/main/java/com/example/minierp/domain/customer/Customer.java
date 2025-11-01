@@ -46,4 +46,7 @@ public class Customer extends AuditableEntity {
     @Column(nullable = false,  columnDefinition = "BOOLEAN DEFAULT FALSE")
     private Boolean active;       // فعال/غیرفعال
 
+    @Column(nullable = false)
+    private String economicCode;
+
 }

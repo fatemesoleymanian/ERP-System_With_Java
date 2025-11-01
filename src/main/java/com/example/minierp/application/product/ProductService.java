@@ -11,12 +11,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+
 @Service
 @RequiredArgsConstructor
 public class ProductService {
 
     private final ProductRepository repository;
-
+    private final VatRateRepository vatRateRepository;
     private final CategoryRepository categoryRepository;
     private final DomainEventPublisher eventPublisher;
 
@@ -26,6 +28,15 @@ public class ProductService {
         if (repository.existsBySku(request.sku())){
             throw new DynamicTextException("محصول تکراری است.");
         }
+
+        Category category = categoryRepository.findById(request.categoryId())
+                .orElseThrow(() -> new NotFoundException(request.categoryId(), "دسته بندی "));
+
+        // --- FETCH VAT RATE ---
+        VatRate vatRate = vatRateRepository.findById(request.vatRateId())
+                .orElseThrow(() -> new NotFoundException(request.vatRateId(), "نرخ مالیات "));
+        // ----------------------
+
         Product product = Product.builder()
                 .name(request.name())
                 .sku(request.sku())
@@ -33,11 +44,9 @@ public class ProductService {
                 .quantity(request.quantity())
                 .discountValue(request.discountValue())
                 .discountPercentage(request.discountPercentage())
+                .category(category) // Set category here
+                .vatRate(vatRate) // Set VAT rate here
                 .build();
-
-        Category category = categoryRepository.findById(request.categoryId())
-                .orElseThrow(() -> new NotFoundException(request.categoryId(), "دسته بندی "));
-        product.setCategory(category);
 
 
         Product saved = repository.save(product);
@@ -61,12 +70,16 @@ public class ProductService {
                 .orElseThrow(() -> new NotFoundException(request.categoryId(), "دسته بندی "));
         product.setCategory(category);
 
+        // --- FETCH AND SET VAT RATE ---
+        VatRate vatRate = vatRateRepository.findById(request.vatRateId())
+                .orElseThrow(() -> new NotFoundException(request.vatRateId(), "نرخ مالیات "));
+        product.setVatRate(vatRate);
+
 
         Product saved = repository.save(product);
         eventPublisher.publish(new ProductUpdatedEvent(id,saved));
         return mapToResponse(saved);
     }
-
     @Transactional(readOnly = true)
     public ProductResponse findById(Long id) {
         Product product = repository.findById(id)
@@ -90,11 +103,21 @@ public class ProductService {
     }
 
     private ProductResponse mapToResponse(Product product) {
+        // Handle potential null VAT rate if not set, though it should be required in DTO
+        Long vatRateId = product.getVatRate() != null ? product.getVatRate().getId() : null;
+        String vatRateName = product.getVatRate() != null ? product.getVatRate().getName() : null;
+        BigDecimal vatRate = product.getVatRate() != null ? product.getVatRate().getRate() : null;
+
         return new ProductResponse(
                 product.getId(),
                 product.getName(),
                 product.getSku(),
                 product.getCategory().getName(),
+                // --- ADDED VAT RATE FIELDS ---
+                vatRateId,
+                vatRateName,
+                vatRate,
+                // -----------------------------
                 product.getPrice(),
                 product.getQuantity(),
                 product.getDiscountValue(),
@@ -106,6 +129,5 @@ public class ProductService {
                 product.getVersion()
         );
     }
-
     /** TODO **/ //SEARCH & FILTER
 }

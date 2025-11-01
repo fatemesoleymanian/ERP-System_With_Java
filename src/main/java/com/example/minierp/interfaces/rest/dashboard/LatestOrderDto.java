@@ -5,6 +5,9 @@ import com.example.minierp.domain.sales.SaleOrder;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 // ساختار جدید برای نمایش سفارش در داشبورد
 public record LatestOrderDto(
@@ -19,7 +22,6 @@ public record LatestOrderDto(
     public static LatestOrderDto from(SaleOrder order) {
         // You'll need to map order.getCustomer().getName() to customerName
         String customerName = order.getCustomer() != null ? order.getCustomer().getName() : "N/A";
-
         return new LatestOrderDto(
                 order.getId(),
                 order.getOrderNumber(),

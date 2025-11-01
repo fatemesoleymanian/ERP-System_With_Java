@@ -75,4 +75,5 @@ public interface SaleOrderRepository extends JpaRepository<SaleOrder, Long> {
  List<SaleOrder> findTop5ByOrderByCreatedAtDesc();
 
 
+    List<SaleOrder> findAllByCreatedAtBetween(LocalDateTime atStartOfDay, LocalDateTime atTime);
 }

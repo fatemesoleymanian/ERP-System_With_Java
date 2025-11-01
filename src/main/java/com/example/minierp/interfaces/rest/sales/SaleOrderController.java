@@ -1,9 +1,11 @@
 package com.example.minierp.interfaces.rest.sales;
 
 import com.example.minierp.api.common.ApiResponse;
+import com.example.minierp.application.reports.InvoiceService;
 import com.example.minierp.application.sales.SaleOrderService;
 import com.example.minierp.domain.sales.OrderStatus;
 import com.example.minierp.domain.sales.SaleOrder;
+import com.lowagie.text.DocumentException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -11,13 +13,15 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -27,7 +31,33 @@ public class SaleOrderController {
 
     private final SaleOrderService service;
 
-    /** ✅ Create a new order */
+    private final InvoiceService invoiceService;
+
+    /** ✅ Create a new draft order */
+    @PostMapping("/draft")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SALES')")
+    public ResponseEntity<ApiResponse<OrderResponseDto>> draftOrder(@Valid @RequestBody CreateOrderRequest request) {
+        SaleOrder order = service.draftOrder(
+                request.items(),
+                request.customerId(),
+                request.orderDiscountValue(),
+                request.orderDiscountPercent(),
+                request.desiredDeliveryFrom(),
+                request.desiredDeliveryTo()
+        );
+        return ResponseEntity.ok(ApiResponse.success(OrderResponseDto.fromEntity(order)));
+    }
+
+    /** ✅ Place an existing draft order */
+    @PutMapping("/{id}/place")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SALES')")
+    public ResponseEntity<ApiResponse<OrderResponseDto>> placeDraftOrder(@PathVariable Long id) {
+        SaleOrder placedOrder = service.placeOrderFromDraft(id);
+        return ResponseEntity.ok(ApiResponse.success(OrderResponseDto.fromEntity(placedOrder)));
+    }
+
+
+    /** ✅ Create and place a new order immediately */
     @PostMapping
     @PreAuthorize("hasRole('ADMIN') or hasRole('SALES')")
     public ResponseEntity<ApiResponse<OrderResponseDto>> placeOrder(@Valid @RequestBody CreateOrderRequest request) {
@@ -112,7 +142,6 @@ public class SaleOrderController {
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
             LocalDateTime from,
-
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
             LocalDateTime to,
@@ -120,11 +149,12 @@ public class SaleOrderController {
     ) {
         if (pageable.getSort().isEmpty()) {
             pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
-                    Sort.by("createdAt").ascending());
+                    Sort.by("createdAt").descending());
         }
 
         return ResponseEntity.ok(ApiResponse.success(service.getOrdersFiltered(status, from, to, pageable)
                 .map(OrderResponseDto::fromEntity)));
+
     }
 
 
@@ -135,5 +165,18 @@ public class SaleOrderController {
         return ResponseEntity.ok(ApiResponse.success(service.getAllOrders().stream()
                 .map(OrderResponseDto::fromEntity)
                 .toList()));
+    }
+
+    /** ✅ Download invoice for an order */
+    @GetMapping("/{id}/invoice")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SALES')")
+    public ResponseEntity<byte[]> downloadInvoice(@PathVariable Long id) throws DocumentException {
+        byte[] pdf = invoiceService.generateInvoice(id);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("filename", "invoice-" + id + ".pdf");
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(pdf);
     }
 }

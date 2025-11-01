@@ -1,9 +1,7 @@
 package com.example.minierp.interfaces.rest.users;
 
 import com.example.minierp.api.common.ApiResponse;
-import com.example.minierp.application.UserService;
-import com.example.minierp.interfaces.rest.product.ProductResponse;
-import com.example.minierp.interfaces.rest.product.UpdateProductRequest;
+import com.example.minierp.application.user.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

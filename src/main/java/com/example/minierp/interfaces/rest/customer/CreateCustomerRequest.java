@@ -30,5 +30,8 @@ public record CreateCustomerRequest(
         String shippingAddress,
 
         @DecimalMin(value = "0.0", message = "سقف اعتبار نمی‌تواند منفی باشد")
-        Double creditLimit
+        Double creditLimit,
+
+        @NotBlank(message = "کد اقتصادی مشتری را وارد کنید.")
+        String economicCode
 ) {}
