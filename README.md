@@ -85,7 +85,6 @@ graph TD
 - **Live API Documentation:** Automatically generated and interactive API documentation via **Springdoc-OpenAPI** (available at `/swagger-ui.html`).
 - **Performance Optimized:** Utilizes **Spring Cache** (`@Cacheable`) on high-read, low-write endpoints to reduce database load.
 - **Containerized:** Fully Dockerized with a multi-stage Dockerfile for a lightweight, production-ready image.
-- **CI/CD Pipeline:** Includes a **GitHub Actions** workflow for continuous integration, running tests and building the Docker image on every push.
 
 ---
 
@@ -214,7 +213,7 @@ mvn test
 ## 👨‍💻 Author
 
 **Fateme Soleymanian**
-[LinkedIn]() • [GitHub]() • [Portfolio]()
+[LinkedIn](https://www.linkedin.com/in/fateme-soleymanian-b2713a225) • [GitHub](https://github.com/fatemesoleymanian) • [Portfolio](https://portfolio-amber-omega-ds3et782px.vercel.app/) • [Telegram](https://t.me/Honeloper)
 
 ---
 
