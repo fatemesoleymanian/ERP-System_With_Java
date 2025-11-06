@@ -10,66 +10,63 @@ Here is a high-level overview of the MiniERP system architecture:
 
 ```mermaid
 graph TD
-    subgraph "Users"
-        direction LR
-        Admin[👩‍💼 Admin]
-        Sales[👨‍💻 Sales]
-        Manager[🧑‍🔧 Inventory Manager]
+    subgraph "Clients"
+        UI[💻 User Interface / Postman]
     end
 
-    subgraph "Client"
-        Client[💻 Browser / Postman]
-    end
-
-    subgraph "MiniERP System (Spring Boot)"
+    subgraph "MiniERP API (Spring Boot)"
         direction TB
-        Sec[🛡️ API Gateway & Security<br>(Spring Security + JWT)]
+        Sec[🛡️ Spring Security / JWT]
+        Ctrl(📲 REST Controllers)
         
-        subgraph "Core Business Modules"
-            direction LR
-            Products[📦 Product Module]
-            Customers[👥 Customer Module]
-            Orders[🛒 Order Module]
-            Inventory[Warehouse Inventory Module]
+        subgraph "Application Layer"
+            direction TB
+            PSvc[ProductService]
+            OSvc[OrderService]
+            ISvc[InventoryService]
+            USvc[UserService]
         end
 
-        subgraph "Shared Services"
-            direction LR
-            Events[🔥 Event Bus<br>(Decouples Modules)]
-            Cache[⚡ Caching<br>(Spring Cache)]
-            Reporting[📄 Reporting<br>(Excel/PDF)]
+        subgraph "Domain Layer"
+            direction TB
+            PEnt[Product Entity]
+            OEnt[Order Entity]
+            IEnt[Inventory Entity]
+            Evt(🔥 DomainEventPublisher)
         end
         
-        Infra[⚙️ Infrastructure Layer<br>(Spring Data JPA / Repositories)]
+        subgraph "Infrastructure Layer"
+            direction TB
+            JPA(🗃️ Repositories / JPA)
+            Cache(⚡ Spring Cache)
+            Utils(🛠️ Excel/PDF Utils)
+        end
     end
 
-    subgraph "Data Storage"
+    subgraph "External Systems"
+        direction TB
         DB[(💾 MySQL Database)]
     end
 
-    %% --- Define Flows ---
-    Users --> Client
-    Client -- HTTPS / REST API --> Sec
+    UI --> Sec
+    Sec --> Ctrl
     
-    Sec --> Products
-    Sec --> Customers
-    Sec --> Orders
-    Sec --> Inventory
+    Ctrl --> PSvc
+    Ctrl --> OSvc
+    Ctrl --> ISvc
+    Ctrl --> USvc
     
-    Products -- Publishes --> Events
-    Orders -- Publishes --> Events
-    Inventory -- Subscribes --> Events
+    PSvc --> Evt
+    PSvc --> JPA
+    
+    OSvc --> Evt
+    OSvc --> JPA
+    OSvc --> ISvc
 
-    Products -.-> Cache
-    Customers -.-> Cache
-    Orders -.-> Reporting
+    ISvc --> JPA
     
-    Products --> Infra
-    Customers --> Infra
-    Orders --> Infra
-    Inventory --> Infra
-    
-    Infra --> DB
+    JPA --> DB
+    PSvc --> Cache
     
 ```   
 ---
