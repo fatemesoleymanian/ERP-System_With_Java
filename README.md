@@ -200,7 +200,7 @@ A ready-to-use Postman collection is included for convenient API testing.
 
 Download or import it directly:
 
-📁 **[MiniERP.postman_collection.json](./Mini ERP APIs.postman_collection.json)**
+📁 **[MiniERP.postman_collection.json](https://github.com/fatemesoleymanian/ERP-System_With_Java/blob/master/Mini%20ERP%20APIs.postman_collection.json)**
 
 To import:
 1. Open Postman → *Import*.
