@@ -194,7 +194,20 @@ Once the application is running, you can explore the complete, interactive API d
 👉 [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
 
 ---
+## 🧰 API Testing with Postman
 
+A ready-to-use Postman collection is included for convenient API testing.
+
+Download or import it directly:
+
+📁 **[MiniERP.postman_collection.json](./Mini ERP APIs.postman_collection.json)**
+
+To import:
+1. Open Postman → *Import*.
+2. Select the file `MiniERP.postman_collection.json`.
+3. Start exploring all available API endpoints.
+
+---
 ## 🧪 Testing
 
 The project includes both unit and integration tests to ensure code quality and correctness.
