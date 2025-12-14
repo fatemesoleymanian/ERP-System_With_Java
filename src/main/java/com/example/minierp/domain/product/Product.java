@@ -16,7 +16,6 @@ import java.math.BigDecimal;
 @Builder
 @Table(name = "products")
 public class Product extends AuditableEntity {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
